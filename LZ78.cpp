@@ -11,7 +11,7 @@
 #define P(a,b) pair<a,b>
 #define UM(a,b) unordered_map<a, b>
 #define V8 vector<uint8_t>
-#define MAX 4096
+#define MAX 65536
 
 using namespace std;
 
@@ -231,3 +231,4 @@ void WriteFromDictionaryRecursion(UM(ll, P(ll, uint8_t))* dictionary, uint8_t re
 #undef P(a,b)
 #undef UM(a,b)
 #undef V8
+#undef MAX
