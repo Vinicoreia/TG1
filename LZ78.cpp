@@ -15,7 +15,6 @@
 
 using namespace std;
 
-
 void EncodeLZ78(string filename, string outputfile);
 void DecodeLZ78(string filename, string outputfile);
 void WriteFromDictionary(UM(ll, P(ll, uint8_t))* dictionary, uint8_t read, ll index, FILE* outFileP, V8* toMap, map<V8, ll>* memory);
@@ -95,7 +94,7 @@ void EncodeLZ78(string filename, string outputfile) {
 					fwrite(&read, sizeof(uint8_t), 1, outFileP);
 				counter += 3;
 			}
-			else if (dictionary.size() - 1 >= 65536 && dictionary.size() - 1 < (long long)(1 << 32)) {
+			else if (dictionary.size() - 1 >= 65536 && dictionary.size() - 1 < (long long)(4294967296)) {
 				index32 = index;
 				fwrite(&index32, sizeof(uint32_t), 1, outFileP);
 				if (!feof(inFileP))
@@ -171,7 +170,7 @@ void DecodeLZ78(string filename, string outputfile) {
 			else
 				WriteFromDictionaryRecursion(&dictionary, dictionary[index16].second, dictionary[index16].first, outFileP, &aux, &readMemory);
 		}
-		else if (dictionary.size() >= 65536 && dictionary.size() < (long long)(1 << 32)) {
+		else if (dictionary.size() >= 65536 && dictionary.size() < (long long)(4294967296)) {
 			fread(&index32, sizeof(uint8_t), 4, inFileP);
 			fread(&read, sizeof(uint8_t), 1, inFileP);
 			if (!feof(inFileP))
@@ -228,7 +227,7 @@ void WriteFromDictionaryRecursion(UM(ll, P(ll, uint8_t))* dictionary, uint8_t re
 }
 
 #undef ll
-#undef P(a,b)
-#undef UM(a,b)
+#undef P
+#undef UM
 #undef V8
 #undef MAX
