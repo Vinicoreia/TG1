@@ -89,9 +89,6 @@ void decompressFile(ifstream &file)
     {
         if (bitString[0] == '0')
         {
-            /*
-            * Se o bit tiver a flag 0, le os proximos 8 e adiciona na stringe move a window
-            */
             bitString.erase(0,1);
             bitChar = bitString.substr(0, 8);
             bitString.erase(0,8);
@@ -107,9 +104,6 @@ void decompressFile(ifstream &file)
         }
         else
         {
-            /*
-            * BIT 1: pula jump pra tras e copia len bits do dicionario
-            */
             bitString.erase(0,1);
             dictBits = bitString.substr(0, DICTBITS);
             lookaheadBits = bitString.substr(DICTBITS, LOOKBITS);
@@ -118,7 +112,6 @@ void decompressFile(ifstream &file)
             nextChar = static_cast<char>(std::stoi(bitChar, 0, 2));
             jump = stoi(dictBits, 0, 2);
             len = stoi(lookaheadBits, 0, 2);
-            /*COPIAR len bits*/
             for(int i=0; i<len; i++){
                 outString += dict[(dict.size()-jump+i)%dict.size()];
             }
@@ -131,7 +124,7 @@ void decompressFile(ifstream &file)
         }
     }
     ofstream output(fileNameOut, ios::out| ios::binary);
-    output<<outString;
+    output<<outString;//WRITE TO FILE
     output.close();
 }
 
@@ -164,10 +157,6 @@ void startWindow(){
         windowPointer += lookahead.size() + 1;
 }
 void getNextWindow(size_t matchSize, size_t jump){
-    /*
-    *   This function slides the window to create the binary file
-    *
-    */
     if (jump == 0)
     {
         matchSize = 0;
@@ -205,7 +194,6 @@ void CompressFile(ifstream &file){
     string maxString;
 
     codeTriples.push_back({0, fileBuffer.substr(0,1),fileBuffer[0]}); /*First item is always present*/
-
     startWindow();
 
     while(!lookahead.empty()){
@@ -213,15 +201,14 @@ void CompressFile(ifstream &file){
         codeTriples.push_back(elementTuple);
         getNextWindow(elementTuple.foundString.length(), elementTuple.offset);
     }
+
     fileBuffer.clear();
-    
     while (codeTriples.size() > 0)
     {
         jump = codeTriples[0].offset;
         len = codeTriples[0].foundString.length();
         matchString = codeTriples[0].foundString;
         next = codeTriples[0].nextChar;
-        // cout << jump << " " << len << " " << next << endl;
         if (jump == 0)
         {
             bitString += "0";
@@ -240,7 +227,6 @@ void CompressFile(ifstream &file){
         }
         else
         {
-             cout<<jump<<" "<<len<<" "<<codeTriples[0].foundString<<endl<<codeTriples[0].nextChar;
             bitString += "1"; /*FLAG*/
             bitString.append(bitset<DICTBITS>(jump).to_string());
             bitString.append(bitset<LOOKBITS>(len).to_string());
@@ -248,40 +234,29 @@ void CompressFile(ifstream &file){
         }
         codeTriples.pop_front();
     }
-    cout<<bitString;
-    
     while(bitString.size()%8!=0){
         bitString+="0";
     }
-    cout<<endl<<endl<<bitString.size()/8;
-    
     ofstream output(fileNameOut, ios::out | ios::binary);
     unsigned long c;
     while(!bitString.empty()){
         bitset<8> b(bitString);
         c = b.to_ulong();
-        // cout<<c<<endl;
         output.write(reinterpret_cast<const char *>(&c), 1);
         bitString.erase(0,8);
     }
     output.close();
 }
 
-
-
-/*pra otimizar a windowsize basta depois definir que se o numero de bytes que eu uso pra representar <o,l,c> for maior
-    do que a quantidade de bytes da string, manda a string e um identificador*/
 code getBiggestSubstring()
 {
     vector<code> substring;
     code sendString;
     char a = lookahead[0];
     size_t pos = dict.find_first_of(a);
-    size_t posaux = pos;
     int i =0;
     string strMatch;
     if (pos >= dict.length()){
-        /*sem match*/
         return {0, lookahead.substr(0,1), lookahead[0]};
         
     }
@@ -302,6 +277,7 @@ code getBiggestSubstring()
             a = lookahead[0];
             pos = dict.find_first_of(a, pos+1);
         }
+
     if (substring.size() != 0)
     {
         reverse(substring.begin(), substring.end());
