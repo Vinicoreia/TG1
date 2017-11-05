@@ -14,7 +14,7 @@ typedef struct code
     char nextChar;
 } code;
 
-int filesize;
+size_t filesize;
 size_t windowPointer = 0;    /*points to end of window*/
 size_t dictPointer = 0;      /*points to beg of dict*/
 size_t lookaheadPointer = 0; /*points to beg of lookahead*/
@@ -80,7 +80,6 @@ void CompressFile(ifstream &file)
     deque<code> codeTriples;
     int jump;
     int len;
-    int max = 0;
     char next;
     string matchString;
     string maxString;
@@ -274,54 +273,43 @@ code getBiggestSubstring()
     code sendString;
     char a = lookahead[0];
     size_t pos = dict.find_first_of(a);
-    int i = 0;
+    size_t i = 0;
     string strMatch;
     if (pos >= dict.length())
     {
-        return {
-            0,
-            lookahead.substr(0, 1),
-            lookahead[0]};
+        return {0, lookahead.substr(0, 1), lookahead[0]};
     }
-    else
+    while (pos != string::npos)
     {
-        while (pos != string::npos)
+        strMatch.clear();
+        i = 0;
+        while (dict[(pos + i) % dict.size()] == lookahead[i] and i < lookahead.size())
         {
-            strMatch.clear();
-            i = 0;
-            while (dict[(pos + i) % dict.size()] == lookahead[i] and i < lookahead.size())
+            strMatch += (lookahead[i]);
+            i++;
+            a = lookahead[i];
+            if (i == lookahead.size())
             {
-                strMatch += (lookahead[i]);
-                i++;
-                a = lookahead[i];
-                if (i == lookahead.size())
-                {
-                    a = fileBuffer[windowPointer]; //ou i + 1
-                    break;
-                }
+                a = fileBuffer[windowPointer];
+                break;
             }
-            substring.push_back({dict.size() - pos,
-                                 strMatch,
-                                 a});
-            a = lookahead[0];
-            pos = dict.find_first_of(a, pos + 1);
         }
-
-        if (substring.size() != 0)
-        {
-            reverse(substring.begin(), substring.end());
-            int index = 0;
-            int max = 0;
-            for (auto vec : substring)
-            {
-                if (vec.foundString.length() > max)
-                {
-                    sendString = vec;
-                    max = vec.foundString.length();
-                }
-                index++;
-            }
-            return sendString;
-        }
+        substring.push_back({dict.size() - pos, strMatch, a});
+        a = lookahead[0];
+        pos = dict.find_first_of(a, pos + 1);
     }
+        reverse(substring.begin(), substring.end());
+        int index = 0;
+        size_t max = 0;
+        for (auto vec : substring)
+        {
+            if (vec.foundString.length() > max)
+            {
+                sendString = vec;
+                max = vec.foundString.length();
+            }
+            index++;
+        }
+    
+    return sendString;
 }
