@@ -1,9 +1,9 @@
 #include<bits/stdc++.h> 
 #define DICTSIZE 32767 
-#define LOOKAHEADSIZE 1023 
+#define LOOKAHEADSIZE 255 
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE 
 #define DICTBITS 15 
-#define LOOKBITS 10 
+#define LOOKBITS 8 
 
 using namespace std;
 
@@ -46,11 +46,10 @@ int main(int argc, char *argv[])
         fileNameIn = argv[2];
         fileMode = argv[1];
         ifstream file(fileNameIn, ios::in | ios::binary | ios::ate);
-        
         if (file.is_open())
         {
             getFileSize(file);
-            cout<<"Your file has : "<<filesize<<" bytes"<<endl;
+            cout << "Your file has : " << filesize << " bytes" << endl;
             fileBuffer = readFileToBuffer(file);
             if (fileMode == "compress")
             {
@@ -65,7 +64,7 @@ int main(int argc, char *argv[])
                 cout << "No option named " << fileMode << endl;
             }
             file.close();
-        }
+            }
     }
     else
     {
@@ -103,7 +102,6 @@ void CompressFile(ifstream &file)
         len = codeTriples[0].foundString.length();
         matchString = codeTriples[0].foundString;
         next = codeTriples[0].nextChar;
-        cout<<jump<<" "<<len<<" "<<next<<endl;
         if (jump == 0)
         {
             bitString += "0";
