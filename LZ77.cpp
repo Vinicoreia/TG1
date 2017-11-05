@@ -1,9 +1,9 @@
 #include<bits/stdc++.h> 
-#define DICTSIZE 16383 
-#define LOOKAHEADSIZE 15 
+#define DICTSIZE 32767 
+#define LOOKAHEADSIZE 1023 
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE 
-#define DICTBITS 14 
-#define LOOKBITS 4 
+#define DICTBITS 15 
+#define LOOKBITS 10 
 
 using namespace std;
 
@@ -40,17 +40,17 @@ void startWindow();
 int main(int argc, char *argv[])
 {
     string fileMode;
-    cout << "The format is <compress|decompress filenameIn filenameOut>" << endl;
     if (argc == 4)
     {
         fileNameOut = argv[3];
         fileNameIn = argv[2];
         fileMode = argv[1];
         ifstream file(fileNameIn, ios::in | ios::binary | ios::ate);
-
+        
         if (file.is_open())
         {
             getFileSize(file);
+            cout<<"Your file has : "<<filesize<<" bytes"<<endl;
             fileBuffer = readFileToBuffer(file);
             if (fileMode == "compress")
             {
@@ -70,6 +70,7 @@ int main(int argc, char *argv[])
     else
     {
         cout << "Wrong format" << endl;
+        cout << "The format is <compress|decompress filenameIn filenameOut>" << endl;
     }
     return 0;
 }
@@ -85,9 +86,7 @@ void CompressFile(ifstream &file)
     string matchString;
     string maxString;
 
-    codeTriples.push_back({0,
-                           fileBuffer.substr(0, 1),
-                           fileBuffer[0]}); /*First item is always present*/
+    codeTriples.push_back({0, fileBuffer.substr(0, 1), fileBuffer[0]});
     startWindow();
 
     while (!lookahead.empty())
@@ -104,6 +103,7 @@ void CompressFile(ifstream &file)
         len = codeTriples[0].foundString.length();
         matchString = codeTriples[0].foundString;
         next = codeTriples[0].nextChar;
+        cout<<jump<<" "<<len<<" "<<next<<endl;
         if (jump == 0)
         {
             bitString += "0";
@@ -133,6 +133,7 @@ void CompressFile(ifstream &file)
     {
         bitString += "0";
     }
+    cout<<"Final filesize after compressing: "<<bitString.size()/8<<" bytes"<<endl;
     ofstream output(fileNameOut, ios::out | ios::binary);
     unsigned long c;
     while (!bitString.empty())
@@ -161,7 +162,7 @@ void decompressFile(ifstream &file)
     int jump;
     int len;
     char nextChar;
-    while (bitString.size() > 8)
+    while (bitString.size() >= 8)
     {
         if (bitString[0] == '0')
         {
@@ -203,7 +204,10 @@ void decompressFile(ifstream &file)
         }
     }
     ofstream output(fileNameOut, ios::out | ios::binary);
+    outString.pop_back(); 
     output << outString; //WRITE TO FILE
+    cout << "Final filesize after decompressing: " << outString.size()<<" bytes"<<endl;
+
     output.close();
 }
 
