@@ -137,9 +137,7 @@ void CompressFile(ifstream &file)
     {
         bitset<8> b(bitString);
         c = b.to_ulong();
-        output.write(reinterpret_cast<
-                         const char *>(&c),
-                     1);
+        output.write(reinterpret_cast<const char *>(&c), 1);
         bitString.erase(0, 8);
     }
     output.close();
@@ -167,10 +165,10 @@ void decompressFile(ifstream &file)
             bitChar = bitString.substr(0, 8);
             bitString.erase(0, 8);
             nextChar = static_cast<char>(std::stoi(bitChar, 0, 2));
-
+            
             outString += nextChar;
-
             dict += nextChar;
+            
             windowPointer += 1;
             if (dict.size() > DICTSIZE)
             {
@@ -201,7 +199,6 @@ void decompressFile(ifstream &file)
         }
     }
     ofstream output(fileNameOut, ios::out | ios::binary);
-    outString.pop_back(); 
     output << outString; //WRITE TO FILE
     cout << "Final filesize after decompressing: " << outString.size()<<" bytes"<<endl;
 
@@ -237,6 +234,7 @@ void startWindow()
     dict = fileBuffer.substr(0, 1);
     windowPointer += lookahead.size() + 1;
 }
+
 void getNextWindow(size_t matchSize, size_t jump)
 {
     if (jump == 0)
@@ -258,6 +256,10 @@ void getNextWindow(size_t matchSize, size_t jump)
     if (lookahead.size() > LOOKAHEADSIZE or lookahead.size() >= filesize)
     {
         lookahead.erase(0, matchSize);
+    }
+    if(windowPointer >=filesize){
+        windowPointer = filesize;
+        lookahead.resize(windowPointer-lookaheadPointer);
     }
     if (lookaheadPointer >= filesize)
     {
@@ -288,9 +290,10 @@ code getBiggestSubstring()
             strMatch += (lookahead[i]);
             i++;
             a = lookahead[i];
-            if (i == lookahead.size())
-            {
-                a = fileBuffer[windowPointer];
+            if (i == lookahead.size()-1)
+            {   
+                // cout<<"entrei";
+                // a = fileBuffer[windowPointer];
                 break;
             }
         }
