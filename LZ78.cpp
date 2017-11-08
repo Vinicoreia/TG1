@@ -31,6 +31,33 @@ public:
 	Tree(Tree* parent, vector<uint8_t> bytes, long long index) : bytes(bytes.begin(), bytes.end()), parent(parent),index(index){
 		childs.resize(256);
 	}
+
+	~Tree() {
+	}
+
+
+	void SearchAndDelete(unordered_map<long long, Tree*> dictionary) {
+		for (auto i = dictionary.begin(); i != dictionary.end(); i++) {
+			if (i->second->IsParent(this)) {
+				i->second->SearchAndDelete(dictionary);
+				i->second = NULL;
+			}
+		}
+
+		childs.clear();
+		childs.resize(256);
+	}
+
+	bool IsParent(Tree* check) {
+		Tree* aux = parent;
+		while (aux != NULL) {
+			if (check == aux) {
+				return true;
+			}
+			aux = aux->parent;
+		}
+		return false;
+	}
 };
 
 
@@ -109,12 +136,26 @@ void LZ78::Encode(string filename, string outputfile) {
 		if (feof(inFileP)) {
 			if (dictionary.size() <= 255) {
 				index8 = (uint8_t)currentPos->index;
+				if (dictionary[currentPos->index] != currentPos)
+					index8 = 0;
+				
 				fwrite(&index8, sizeof(uint8_t), 1, outFileP);
+
+				if (index8 == 0)
+					fwrite(&aux[0], sizeof(uint8_t), 1, outFileP);
+
 			}
 
 			else if (dictionary.size() > 255 && dictionary.size() <= 65535) {
 				index16 = (uint16_t)currentPos->index;
+				
+				if (dictionary[currentPos->index] != currentPos)
+					index16 = 0;
+
 				fwrite(&index16, sizeof(uint16_t), 1, outFileP);
+
+				if (index16 == 0)
+					fwrite(&aux[0], sizeof(uint8_t), 1, outFileP);
 			}
 
 			else if (dictionary.size() > 65535 && dictionary.size() <= (4294967295)) {
@@ -132,7 +173,9 @@ void LZ78::Encode(string filename, string outputfile) {
 		}
 
 		else {
-			currentPos->childs[read] = new Tree(currentPos, aux, counter);
+			aux.emplace_back(read);
+			if(counter <= MAX)
+				currentPos->childs[read] = new Tree(currentPos, aux, counter);
 
 			if (dictionary.size() <= 255) {
 				index8 = (uint8_t)currentPos->index;
@@ -164,11 +207,12 @@ void LZ78::Encode(string filename, string outputfile) {
 				fwrite(&read, sizeof(uint8_t), 1, outFileP);
 			}
 
-			dictionary[counter++] = currentPos->childs[read];
-
+			if(counter <= MAX)
+				dictionary[counter++] = currentPos->childs[read];
+			/*
 			if (counter%MAX == 0) {
 				counter = 1;
-			}
+			}*/
 
 			aux.clear();
 			//aux.emplace_back(read);
@@ -229,8 +273,12 @@ void LZ78::Decode(string filename, string outputfile) {
 
 			if (index8 == 0) {
 				aux.emplace_back(read);
-				currentPos->childs[read] = new Tree(currentPos, aux, counter);
-				dictionary[counter++] = currentPos->childs[read];
+
+				if (counter <= MAX) {
+					currentPos->childs[read] = new Tree(currentPos, aux, counter);
+					dictionary[counter++] = currentPos->childs[read];
+				}
+
 				fwrite(&read, sizeof(uint8_t), 1, outFileP);
 			}
 			else {
@@ -240,8 +288,10 @@ void LZ78::Decode(string filename, string outputfile) {
 
 				if (!feof(inFileP)) {
 					aux.emplace_back(read);
-					currentPos->childs[read] = new Tree(currentPos, aux, counter);
-					dictionary[counter++] = currentPos->childs[read];
+					if (counter <= MAX) {
+						currentPos->childs[read] = new Tree(currentPos, aux, counter);
+						dictionary[counter++] = currentPos->childs[read];
+					}
 				}
 
 				for (int i = 0; i < aux.size(); i++) {
@@ -255,9 +305,12 @@ void LZ78::Decode(string filename, string outputfile) {
 
 			if (index16 == 0) {
 				aux.emplace_back(read);
-				currentPos->childs[read] = new Tree(currentPos, aux, counter);
-				dictionary[counter++] = currentPos->childs[read];
-				fwrite(&read, sizeof(uint8_t), 1, outFileP);
+				if (counter <= MAX) {
+					currentPos->childs[read] = new Tree(currentPos, aux, counter);
+					dictionary[counter++] = currentPos->childs[read];
+				}
+				if(!feof(inFileP))
+					fwrite(&read, sizeof(uint8_t), 1, outFileP);
 			}
 			else {
 				currentPos = dictionary[(uint64_t)index16];
@@ -265,8 +318,10 @@ void LZ78::Decode(string filename, string outputfile) {
 				aux = currentPos->bytes;
 				if (!feof(inFileP)) {
 					aux.emplace_back(read);
-					currentPos->childs[read] = new Tree(currentPos, aux, counter);
-					dictionary[counter++] = currentPos->childs[read];
+					if (counter <= MAX) {
+						currentPos->childs[read] = new Tree(currentPos, aux, counter);
+						dictionary[counter++] = currentPos->childs[read];
+					}
 				}
 
 				for (int i = 0; i < aux.size(); i++) {
@@ -280,8 +335,10 @@ void LZ78::Decode(string filename, string outputfile) {
 
 			if (index32 == 0) {
 				aux.emplace_back(read);
-				currentPos->childs[read] = new Tree(currentPos, aux, counter);
-				dictionary[counter++] = currentPos->childs[read];
+				if (counter <= MAX) {
+					currentPos->childs[read] = new Tree(currentPos, aux, counter);
+					dictionary[counter++] = currentPos->childs[read];
+				}
 				if (!feof(inFileP))
 					fwrite(&read, sizeof(uint8_t), 1, outFileP);
 			}
@@ -293,8 +350,10 @@ void LZ78::Decode(string filename, string outputfile) {
 					aux.emplace_back(read);
 				}
 
-				currentPos->childs[read] = new Tree(currentPos, aux, counter);
-				dictionary[counter++] = currentPos->childs[read];
+				if (counter <= MAX) {
+					currentPos->childs[read] = new Tree(currentPos, aux, counter);
+					dictionary[counter++] = currentPos->childs[read];
+				}
 
 				for (int i = 0; i < aux.size(); i++) {
 					fwrite(&aux[i], sizeof(uint8_t), 1, outFileP);
@@ -329,9 +388,9 @@ void LZ78::Decode(string filename, string outputfile) {
 			}
 		}
 
-		if ((counter%MAX) == 0) {
+		/*if ((counter%MAX) == 0) {
 			counter = 1;
-		}
+		}*/
 
 	}while (!feof(inFileP));
 
