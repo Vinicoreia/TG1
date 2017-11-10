@@ -116,6 +116,8 @@ void LZ78::Encode(string filename, string outputfile) {
 
 	int load = 0;
 
+	unsigned long long size = 0;
+
 	long long counter = 1;
 
 	long long indexSize = 1;
@@ -148,6 +150,7 @@ void LZ78::Encode(string filename, string outputfile) {
 				if (index8 == 0)
 					fwrite(&aux[0], sizeof(uint8_t), 1, outFileP);
 
+				size += 2;
 			}
 
 			else if (dictionary.size() > 255 && dictionary.size() <= 65535) {
@@ -160,6 +163,8 @@ void LZ78::Encode(string filename, string outputfile) {
 
 				if (index16 == 0)
 					fwrite(&aux[0], sizeof(uint8_t), 1, outFileP);
+
+				size += 3;
 			}
 
 			else if (dictionary.size() > 65535 && dictionary.size() <= (4294967295)) {
@@ -186,6 +191,7 @@ void LZ78::Encode(string filename, string outputfile) {
 				fwrite(&index8, sizeof(uint8_t), 1, outFileP);
 
 				fwrite(&read, sizeof(uint8_t), 1, outFileP);
+				size += 2;
 			}
 
 			else if (dictionary.size() > 255 && dictionary.size() <= 65535) {
@@ -193,7 +199,19 @@ void LZ78::Encode(string filename, string outputfile) {
 				fwrite(&index16, sizeof(uint16_t), 1, outFileP);
 
 				fwrite(&read, sizeof(uint8_t), 1, outFileP);
+
+				size += 3;
 			}
+
+			else if (dictionary.size() > 65535 && dictionary.size() <= 4294967295) {
+				index32 = (uint32_t)currentPos->index;
+				fwrite(&index32, sizeof(uint16_t), 1, outFileP);
+
+				fwrite(&read, sizeof(uint8_t), 1, outFileP);
+
+				size += 4;
+			}
+
 
 			if (dictionary.size() < MAX) {
 				dictionary[counter++] = currentPos->childs[read];
@@ -206,7 +224,7 @@ void LZ78::Encode(string filename, string outputfile) {
 						counter = 1;
 					}
 				}
-				cout << counter << " ";
+				//cout << counter << " ";
 				Tree* parent = dictionary[counter]->parent;
 
 				
@@ -228,7 +246,7 @@ void LZ78::Encode(string filename, string outputfile) {
 		}
 	} while (!feof(inFileP));
 
-	cout << dictionary.size();
+	cout << "\nWrote: " << size << " Bytes\n";
 
 	fclose(inFileP);
 	fclose(outFileP);
@@ -267,6 +285,7 @@ void LZ78::Decode(string filename, string outputfile) {
 		currentPos = &base;
 		index8 = 0;
 		index16 = 0;
+		index32 = 0;
 
 		if (dictionary.size() < 256) {
 			fread(&index8, sizeof(uint8_t), 1, inFileP);
@@ -323,7 +342,7 @@ void LZ78::Decode(string filename, string outputfile) {
 					//Remove child and set new index
 					Tree* parent = dictionary[counter]->parent;
 					parent->RemoveChild(dictionary[counter]->bytes.back());
-					cout << counter << " ";
+					//cout << counter << " ";
 					currentPos->childs[read]->index = counter;
 					dictionary[counter++] = currentPos->childs[read];
 				}
@@ -349,7 +368,7 @@ void LZ78::Decode(string filename, string outputfile) {
 								counter = 1;
 							}
 						}
-						cout << counter << " ";
+						//cout << counter << " ";
 						//Remove child and set ew index
 						Tree* parent = dictionary[counter]->parent;
 						parent->RemoveChild(dictionary[counter]->bytes.back());
@@ -363,6 +382,7 @@ void LZ78::Decode(string filename, string outputfile) {
 				}
 			}
 		}
+
 		if (counter%MAX == 0) {
 			counter = 1;
 		}
