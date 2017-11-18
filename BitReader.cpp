@@ -180,6 +180,8 @@ int main(){
 	cout<<(int)br.Read(8)<<endl;
 	cout<<(int)br.Read(1)<<endl;
 	
+	
+	
 	fclose(input);
 	return 0;
 }
