@@ -34,7 +34,7 @@ public:
 		numberOfBits = 0;
 	}
 
-	void SetFile(FILE* file){
+	void SetFile(FILE* file) {
 		input = file;
 	}
 
@@ -45,8 +45,10 @@ public:
 		//If there are no bits, read a byte from input.
 		if (numberOfBits == 0) {
 			fread(&read, sizeof(uint8_t), 1, input);
-			if (feof(input))
+			if (feof(input)) {
+				int a = 0;
 				return -1;
+			}
 			buffer = (uint64_t)read;
 			numberOfBits = 8;
 		}
@@ -182,13 +184,13 @@ public:
 	vector<long long> limits;
 	long long totalBytes;
 
-	FrequencyTable(vector<long long> frequencies):frequencies(frequencies) {
+	FrequencyTable(vector<long long> frequencies) :frequencies(frequencies) {
 		long long total = 0;
 		for (auto &i : frequencies) {
-			//cout << i << endl;
 			limits.emplace_back(total);
 			total += i;
 		}
+		cout << total<<endl;
 		totalBytes = total;
 	}
 
@@ -220,6 +222,19 @@ public:
 		return limits[index] + frequencies[index];
 	}
 
+
+	int Search(long long value) {
+		long long start = 0;
+		long long end = frequencies.size();
+		while ((end - start > 1)) {
+			long long mid = (start + end)>>1;
+			if (GetLow(mid) > value)
+				end = mid;
+			else
+				start = mid;
+		}
+		return (int)start;
+	}
 };
 
 
@@ -232,6 +247,12 @@ public:
 	static int pendingBits;
 	static void Encode(std::string filename, std::string outputfile);
 	static void Decode(std::string filename, std::string outputfile);
+	static int ReadBit() {
+		int temp = (int)br.GetBit();
+		if (temp == -1)
+			temp = 0;
+		return temp;
+	}
 };
 
 BitWriter ArithmeticEncoder::bw;
@@ -249,14 +270,16 @@ void ArithmeticEncoder::WriteBits(bool bit) {
 }
 
 void ArithmeticEncoder::Encode(std::string filename, std::string outputfile) {
-	FILE* input, *output;
-	
+	FILE *input, *output;
+
 	std::vector<long long> frequencies;
 	unsigned long long nread = 0;
 
 	for (int i = 0; i < NOFALPHABET; i++) {
 		frequencies.emplace_back(0);
 	}
+
+	frequencies.emplace_back(1);
 
 	input = fopen(filename.c_str(), "rb");
 
@@ -267,17 +290,15 @@ void ArithmeticEncoder::Encode(std::string filename, std::string outputfile) {
 
 	br.SetFile(input);
 
-	clock_t time = clock();
+
 	do {
 		uint8_t read;
 		nread++;
 		fread(&read, sizeof(uint8_t), 1, input);
-
-		frequencies[read]++;
+		if(!feof(input))
+			frequencies[read]++;
 	} while (!feof(input));
 
-	std::cout << "Read " << nread << " bytes in " << (double)(clock() - time) / CLOCKS_PER_SEC<<std::endl;
-	
 	fclose(input);
 	input = fopen(filename.c_str(), "rb");
 
@@ -292,41 +313,39 @@ void ArithmeticEncoder::Encode(std::string filename, std::string outputfile) {
 
 	FrequencyTable freq(frequencies);
 
-
 	unsigned long long high = 0xffffffffU;
 	unsigned long long low = 0x0;
 
+	//size of frequency table
 
-	for (int i = 0; i < frequencies.size(); i++) {
-		if (frequencies[i] > 0) {
-			fwrite((&i)+ 3 , sizeof(uint8_t), 1, output);
-			fwrite(&frequencies[i], sizeof(long long), 1, output);
-		}
+	//write frequencies
+	for (int i = 0; i < frequencies.size() - 1; i++) {
+		fwrite(&frequencies[i], sizeof(long long), 1, output);
 	}
-
 
 	pendingBits = 0;
 
+
 	uint8_t read;
+	int readAux;
 
-	do {
+	while (!feof(input)) {
 		fread(&read, sizeof(uint8_t), 1, input);
+		readAux = read;
+		if (feof(input))
+			readAux = NOFALPHABET;
+
 		unsigned long long range = high - low + 1;
-		
 
-		unsigned long long nLow = low + (range * freq.GetLow(read)) / freq.totalBytes;
-		high = (low + (range * freq.GetHigh(read)) / freq.totalBytes) - 1;
+		unsigned long long nLow = low + (range * freq.GetLow(readAux)) / freq.totalBytes;
+		high = (low + (range * freq.GetHigh(readAux)) / freq.totalBytes) - 1;
 		low = nLow;
-
-		high &= MASK;
-		low &= MASK;
-
 
 		//While MSB are equal write bit on file
 		while (((low^high) & 0x80000000U) == 0) {
-			WriteBits((low >> 31)&1);
-			low = (low << 1);
-			high = (high << 1) | 1;
+			WriteBits((low >> 31) & 1);
+			low = (low << 1)&MASK;
+			high = ((high << 1)&MASK) | 1;
 		}
 		//E3, when [low, high] has 0.5
 		while (((low & ~high) & 0x40000000U) != 0) {
@@ -334,29 +353,108 @@ void ArithmeticEncoder::Encode(std::string filename, std::string outputfile) {
 			low = (low << 1) & (MASK >> 1);
 			high = ((high << 1) & (MASK >> 1)) | TOP_MASK | 1;
 		}
+	} 
 
-	} while (!feof(input));
-
-	
+	WriteBits(1);
+	bw.End();
 
 	fclose(input);
 	fclose(output);
 }
 
-void ArithmeticEncoder::Decode(std::string filename, std::string outputfile) {
 
+void ArithmeticEncoder::Decode(std::string filename, std::string outputfile) {
+	FILE* input, *output;
+	std::vector<long long> frequencies;
+
+	input = fopen(filename.c_str(), "rb");
+	if (!input) {
+		std::cout << "Could not open input file!\n";
+		exit(-1);
+	}
+
+	output = fopen(outputfile.c_str(), "wb");
+	if (!output) {
+		std::cout << "Could not open output file!\n";
+		fclose(input);
+		exit(-1);
+	}
+
+	//Get Frequencies
+	for (int i = 0; i < NOFALPHABET; i++) {
+		long long read;
+		fread(&read, sizeof(long long), 1, input);
+		frequencies.emplace_back(read);
+	}
+
+	//Add EOF
+	frequencies.emplace_back(1);
+
+	br.SetFile(input);
+	bw.SetFile(output);
+
+	FrequencyTable freq(frequencies);
+
+	unsigned long long high = 0xffffffffU;
+	unsigned long long low = 0x0;
+	long long code = 0;
+
+	for (int i = 0; i < 32; i++) {
+		code = (code << 1) | br.GetBit();
+	}
+
+	int symbol = 0;
+
+	for(;;) {
+
+		unsigned long long range = high - low + 1;
+		unsigned long long value = ((code - low + 1) * freq.totalBytes - 1) / range;
+
+		symbol = freq.Search(value);
+
+		unsigned long long nLow = low + (range * freq.GetLow(symbol)) / freq.totalBytes;
+		high = low + range * freq.GetHigh(symbol) / freq.totalBytes - 1;
+		low = nLow;
+
+		//While MSB are equal write bit on file
+		while (((low^high) & 0x80000000U) == 0) {
+			code = ((code << 1) & MASK) | ReadBit();
+			low = (low << 1) & MASK;
+			high = ((high << 1)& MASK) | 1;
+		}
+		//E3, when [low, high] has 0.5
+		while ((low & ~high & 0x40000000U) != 0) {
+			code = (code & TOP_MASK) | ((code << 1) & (MASK >>1)) | ReadBit();
+			low = (low << 1) & (MASK >> 1);
+			high = ((high << 1) & (MASK >> 1)) | TOP_MASK | 1;
+		}
+
+		if (symbol == 256)
+			break;
+
+		uint8_t toWrite = (uint8_t)symbol;
+		fwrite(&toWrite, sizeof(uint8_t), 1, output);
+	}
 }
 
 
 
 
 int main(int argc, char** argv) {
+	clock_t time;
 	std::string filename, output;
 
 	std::cin >> filename >> output;
 
+	time = clock();
 	ArithmeticEncoder::Encode(filename, output);
+	cout << "Time elapsed in Encoding: " << ((double)(clock() - time) / CLOCKS_PER_SEC)<<endl;
 
-	system("PAUSE");
+	std::cin >> filename >> output;
+
+	time = clock();
+	ArithmeticEncoder::Decode(filename, output);
+	cout << "Time elapsed in Decoding: " << ((double)(clock() - time) / CLOCKS_PER_SEC) << endl;
+
 	return 0;
 }
