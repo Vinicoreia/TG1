@@ -21,6 +21,9 @@
 
 using namespace std;
 
+/*
+*	Tree for checking previously viewed sequences
+*/
 class Tree {
 public:
 	vector<Tree*> childs;
@@ -102,7 +105,6 @@ int main(int argc, char** argv) {
 void LZ78::Encode(string filename, string outputfile) {
 	//unordered_map<long long, pair<long long, uint8_t>> dictionary;
 	unordered_map<long long, Tree*> dictionary;
-
 
 	uint8_t read;
 	vector<uint8_t> aux;
@@ -188,8 +190,6 @@ void LZ78::Encode(string filename, string outputfile) {
 		}
 	} while (!feof(inFileP));
 
-	cout << dictionary.size() << endl;
-
 	fclose(inFileP);
 	fclose(outFileP);
 }
@@ -272,8 +272,6 @@ void LZ78::Decode(string filename, string outputfile) {
 
 		currentPos = nextPos;
 	}
-
-	cout << dictionary.size() << endl;
 
 	fclose(inFileP);
 	fclose(outFileP);

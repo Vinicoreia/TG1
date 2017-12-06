@@ -21,6 +21,10 @@
 
 using namespace std;
 
+
+/*
+*	Tree for checking previously viewed sequences
+*/
 class Tree {
 public:
 	vector<Tree*> childs;
@@ -101,8 +105,10 @@ int main(int argc, char** argv) {
 
 void LZ78::Encode(string filename, string outputfile) {
 	//unordered_map<long long, pair<long long, uint8_t>> dictionary;
+	/*
+	The dictionary consists of an index and a pointer to a node in the tree.
+	*/
 	unordered_map<long long, Tree*> dictionary;
-
 
 	uint8_t read;
 	vector<uint8_t> aux;
@@ -139,18 +145,15 @@ void LZ78::Encode(string filename, string outputfile) {
 
 		fread(&read, sizeof(uint8_t), 1, inFileP);
 
+		//If feof flag is set write the index or write the last read index
 		if (feof(inFileP)) {
 			if (dictionary.size() <= 255) {
 				index8 = (uint8_t)currentPos->index;
 				if (dictionary[currentPos->index] != currentPos)
 					index8 = 0;
 				
-				fwrite(&index8, sizeof(uint8_t), 1, outFileP);
-
 				if (index8 == 0)
 					fwrite(&aux[0], sizeof(uint8_t), 1, outFileP);
-
-				size += 2;
 			}
 
 			else if (dictionary.size() > 255 && dictionary.size() <= 65535) {
@@ -176,11 +179,11 @@ void LZ78::Encode(string filename, string outputfile) {
 				fwrite(&currentPos->index, sizeof(long long), 1, outFileP);
 			}
 		}
-		else if (currentPos->childs[read] != NULL) {
+		else if (currentPos->childs[read] != NULL) { //If the current string was already seen, then just add the current read byte to the string
 			currentPos = currentPos->childs[read];
 			aux.emplace_back(read);
 		}
-
+		//Else the string read is a new string, then it should be added to the dictionary;
 		else {
 			aux.emplace_back(read);
 
@@ -191,7 +194,6 @@ void LZ78::Encode(string filename, string outputfile) {
 				fwrite(&index8, sizeof(uint8_t), 1, outFileP);
 
 				fwrite(&read, sizeof(uint8_t), 1, outFileP);
-				size += 2;
 			}
 
 			else if (dictionary.size() > 255 && dictionary.size() <= 65535) {
@@ -199,8 +201,6 @@ void LZ78::Encode(string filename, string outputfile) {
 				fwrite(&index16, sizeof(uint16_t), 1, outFileP);
 
 				fwrite(&read, sizeof(uint8_t), 1, outFileP);
-
-				size += 3;
 			}
 
 			else if (dictionary.size() > 65535 && dictionary.size() <= 4294967295) {
@@ -208,11 +208,9 @@ void LZ78::Encode(string filename, string outputfile) {
 				fwrite(&index32, sizeof(uint16_t), 1, outFileP);
 
 				fwrite(&read, sizeof(uint8_t), 1, outFileP);
-
-				size += 4;
 			}
 
-
+			//If the dictionary is no full
 			if (dictionary.size() < MAX) {
 				dictionary[counter++] = currentPos->childs[read];
 			}
@@ -245,8 +243,6 @@ void LZ78::Encode(string filename, string outputfile) {
 			index16 = 0;
 		}
 	} while (!feof(inFileP));
-
-	cout << "\nWrote: " << size << " Bytes\n";
 
 	fclose(inFileP);
 	fclose(outFileP);

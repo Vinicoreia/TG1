@@ -261,7 +261,7 @@ BitReader ArithmeticEncoder::br;
 int ArithmeticEncoder::pendingBits = 0;
 
 void ArithmeticEncoder::WriteBits(bool bit) {
-	//printf("%d", (bit) ? 1 : 0);
+	//Write bits to file, if there are pending bits, these are added as well
 	bw.WriteBit((bit) ? (uint8_t)1 : (uint8_t)0);
 	while (pendingBits > 0) {
 		bw.WriteBit((bit) ? (uint8_t)0 : (uint8_t)1);
@@ -275,10 +275,12 @@ void ArithmeticEncoder::Encode(std::string filename, std::string outputfile) {
 	std::vector<long long> frequencies;
 	unsigned long long nread = 0;
 
+	//Initialize the frequencies
 	for (int i = 0; i < NOFALPHABET; i++) {
 		frequencies.emplace_back(0);
 	}
 
+	//Add the EOF to the end
 	frequencies.emplace_back(1);
 
 	input = fopen(filename.c_str(), "rb");
@@ -290,7 +292,7 @@ void ArithmeticEncoder::Encode(std::string filename, std::string outputfile) {
 
 	br.SetFile(input);
 
-
+	//Get frequencies of each byte.
 	do {
 		uint8_t read;
 		nread++;
@@ -316,8 +318,6 @@ void ArithmeticEncoder::Encode(std::string filename, std::string outputfile) {
 	unsigned long long high = 0xffffffffU;
 	unsigned long long low = 0x0;
 
-	//size of frequency table
-
 	//write frequencies
 	for (int i = 0; i < frequencies.size() - 1; i++) {
 		fwrite(&frequencies[i], sizeof(long long), 1, output);
@@ -335,8 +335,8 @@ void ArithmeticEncoder::Encode(std::string filename, std::string outputfile) {
 		if (feof(input))
 			readAux = NOFALPHABET;
 
+		//Update the range of high and low
 		unsigned long long range = high - low + 1;
-
 		unsigned long long nLow = low + (range * freq.GetLow(readAux)) / freq.totalBytes;
 		high = (low + (range * freq.GetHigh(readAux)) / freq.totalBytes) - 1;
 		low = nLow;
@@ -406,12 +406,13 @@ void ArithmeticEncoder::Decode(std::string filename, std::string outputfile) {
 	int symbol = 0;
 
 	for(;;) {
-
 		unsigned long long range = high - low + 1;
 		unsigned long long value = ((code - low + 1) * freq.totalBytes - 1) / range;
 
+		//Get current symbol.
 		symbol = freq.Search(value);
 
+		//Update the range
 		unsigned long long nLow = low + (range * freq.GetLow(symbol)) / freq.totalBytes;
 		high = low + range * freq.GetHigh(symbol) / freq.totalBytes - 1;
 		low = nLow;
