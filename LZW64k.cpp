@@ -97,8 +97,6 @@ int main(int argc, char** argv) {
 	LZ78::Decode(filename, outputfile);
 	cout << "\nDencoded in: " << (clock() - begin) / CLOCKS_PER_SEC << " seconds\n";
 
-	system("PAUSE");
-
 	return 0;
 }
 
