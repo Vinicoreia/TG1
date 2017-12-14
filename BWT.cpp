@@ -2,28 +2,14 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include <algorithm>
 #include <ctime>
-#include <utility>
 #include <unordered_map>
 #include <cstdint>
+#include <algorithm>
+
+#include "BWT.h"
 
 using namespace std;
-
-class Data {
-public:
-	uint8_t *data;
-	int size;
-
-	Data(int size) {
-		this->size = size;
-		data = new uint8_t[size];
-	}
-	Data() {
-		size = 0;
-	}
-};
-
 
 int Compare(Data& a, Data& b) {
 	for (int i = 0; i < a.size; i++) {
@@ -33,15 +19,6 @@ int Compare(Data& a, Data& b) {
 	}
 	return 0;
 }
-
-
-class BWT {
-public:
-	//static pair<string, int> Transform(string toTransform);
-	static pair<Data, int> Transform(uint8_t* toTransform, int size);
-	static Data Reverse(Data toReverse, int index);
-
-};
 
 Data BWT::Reverse(Data toReverse, int index) {
 	Data reverse(toReverse.size);
