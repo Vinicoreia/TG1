@@ -10,8 +10,9 @@
 #include "MTF.h"
 
 #define BLOCKSIZE 16384	/*1024 | 2048 | 4096 | 8192 | 16384 | 32768 | 65536
-Memory needed +-		  1MB  | 4MB  | 16MB | 67MB | 268MB | 1GB   | 4GB  */
-/*
+Memory needed +-		  1MB  | 4MB  | 16MB | 67MB | 268MB | 1GB   | 4GB  
+	
+	
 	2 - GATHER DATA
 	3 - FINISH
 */
@@ -135,15 +136,38 @@ int Decode(string file1, string file2) {
 	return 0;
 }
 
-int main() {
-	string file1, file2;
+int main(int argc, char** argv) {
+	string file1(""), file2(""), mode;
+	
+	if (argc == 1 || argc < 4) {
+		cout << "-e <input file name> <output file name>\n";
+		cout << "-d <input file name> <output file name>\n";
+		cout << "Select mode: ";
+		cin >> mode;
+		cout << "Input file: ";
+		cin >> file1;
+		cout << "Output file: ";
+		cin >> file2;
+	}else
+		mode.assign(argv[1]);
 
-	cin >> file1 >> file2;
+	if (mode != "-e" && mode != "-d") {
+		cout << "Invalid input!\n";
+		return -1;
+	}
 
-	Encode(file1, file2);
+	if (file1 == "")
+		file1.assign(argv[2]);
+	
+	if (file2 == "")
+		file2.assign(argv[3]);
 
-	cin >> file1 >> file2;
-	Decode(file1, file2);
+	if (mode == "-e") {
+		Encode(file1, file2);
+	}
+	else if (mode == "-d") {
+		Decode(file1, file2);
+	}
 
 	return 0;
 }
