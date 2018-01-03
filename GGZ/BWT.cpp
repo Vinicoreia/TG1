@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <cstdint>
 #include <algorithm>
+#include <cstring>
 
 #include "BWT.h"
 

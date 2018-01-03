@@ -1,4 +1,3 @@
-#include "LZ78v2.h"
 
 #include <string>
 #include <iostream>
