@@ -34,14 +34,14 @@ int Compare(const vector<uint8_t> &a, const vector<uint8_t> &b) {
 	return 0;
 }
 
-unsigned short Find(vector<vector<uint8_t>> vec, vector<uint8_t> find) {
+unsigned short Find(vector<vector<uint8_t>> *vec, vector<uint8_t> *find) {
 	int a, b;
 	a = 0;
-	b = vec.size();
+	b = vec->size();
 
 	while (b - a > 1) {
 		int mid = (a + b) >> 1;
-		if (find < vec[mid]) {
+		if (*find < vec->at(mid)) {
 			b = mid;
 		}
 		else /*if(find > vec[mid])*/{
@@ -128,7 +128,7 @@ unsigned short BWT::Transform(Data* toTransform) {
 
 	unsigned short index;
 
-	index = Find(rotations, original);
+	index = Find(&rotations, &original);
 
 	for (int i = 0; i < rotations.size(); i++) {
 		toTransform->data[i] = rotations[i][rotations.size() - 1];
