@@ -7,9 +7,11 @@ using namespace std;
 int filesize;
 std::string buffer;
 std::unordered_map<char, long long> mapSymbAmount;
+std::unordered_map<char, string> mapSymbCode;
+
 std::vector<std::pair<char, long long>> pairSymbProb;
 std::priority_queue<node *, vector<node *>, compare> heap;
-std::unordered_map<char, string> mapSymbCode;
+std::vector<std::pair<char, string>> pairSymbCode;
 
 void getFileSize(ifstream &file);
 void getFrequency();
@@ -22,7 +24,7 @@ std::string charToBin(char c);
 
 int main(int argc, char *argv[])
 {
-    ifstream file("teste.txt", ios::in | ios::binary | ios::ate);
+    ifstream file("LZ77.cpp", ios::in | ios::binary | ios::ate);
     getFileSize(file);
     buffer = readFromFile(file);
     huffmanEncode();
@@ -143,9 +145,8 @@ void mapCodes(struct node *root, string str)
         return;
 
     if (root->leaf){
-        std::cout<<root->code;
         mapSymbCode[root->code] = str;
-        std::cout << " " << str << endl;
+        pairSymbCode.push_back(make_pair(root->code, str));
     }
 
     mapCodes(root->left, str + "0");
@@ -156,30 +157,16 @@ std::string WriteOutString(){
     std::string out;
     char c;
     int count;
-    std::vector<std::pair<char, int>> pairSymbLength;
-
-    for (auto it : mapSymbCode)
-    {
-        pairSymbLength.push_back(make_pair(it.first, it.second.length()));
-        
-        // out += charToBin(it.first);
-        // out.append(it.second);
-        // out += charToBin(char(0x1f));
-    }
-
-    std::sort(pairSymbLength.begin(), pairSymbLength.end(), [](auto &left, auto &right){
-        return left.second < right.second;
+    std::sort(pairSymbCode.begin(), pairSymbCode.end(), [](auto &left, auto &right) {
+        return left.second.length() < right.second.length();
     });
-    std::sort(pairSymbLength.begin(), pairSymbLength.end(), [](auto &left, auto &right){
-        return left.first < right.first;
-    });
-    std::cout<<std::endl;
-    for (auto it : pairSymbLength)
+
+    for (auto it : pairSymbCode)
     {
-        std::cout<<it.first<<" "<<it.second<<std::endl;
         // out += charToBin(it.first);
-        // out.append(it.second);
-        // out += charToBin(char(0x1f));
+        // bitset<8> bs = it.second.length();
+        // out.append(bs.to_string());
+        std::cout<<it.first<<" "<<it.second<<endl;
     }
     for (int i = 0; i < buffer.size(); i++)
     {
