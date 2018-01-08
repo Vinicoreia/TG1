@@ -400,7 +400,7 @@ void ArithmeticEncoder::Decode(std::string filename, std::string outputfile) {
 	long long code = 0;
 
 	for (int i = 0; i < 32; i++) {
-		code = (code << 1) | br.GetBit();
+		code = (code << 1) | ReadBit();
 	}
 
 	int symbol = 0;
