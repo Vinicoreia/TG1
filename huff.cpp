@@ -11,7 +11,8 @@ std::unordered_map<char, string> mapSymbCode;
 
 std::vector<std::pair<char, long long>> pairSymbProb;
 std::priority_queue<node *, vector<node *>, compare> heap;
-std::vector<std::pair<char, string>> pairSymbCode;
+std::vector<std::pair<char, int>> pairSymbCodeLength;
+std::unordered_map<char, std::pair<std::string, int>> mapSymbCodeLength;
 
 void getFileSize(ifstream &file);
 void getFrequency();
@@ -21,17 +22,16 @@ void mapCodes(struct node *root, string str);
 string readFromFile(ifstream &fileIn);
 std::string WriteOutString();
 std::string charToBin(char c);
-
+void buildCodes();
 int main(int argc, char *argv[])
 {
-    ifstream file("LZ77.cpp", ios::in | ios::binary | ios::ate);
+    ifstream file("teste.txt", ios::in | ios::binary | ios::ate);
     getFileSize(file);
     buffer = readFromFile(file);
     huffmanEncode();
-
     file.close();
     return 0;
-    }
+}
 
 
 void getFrequency()
@@ -146,7 +146,7 @@ void mapCodes(struct node *root, string str)
 
     if (root->leaf){
         mapSymbCode[root->code] = str;
-        pairSymbCode.push_back(make_pair(root->code, str));
+        pairSymbCodeLength.push_back(make_pair(root->code, str.length()));
     }
 
     mapCodes(root->left, str + "0");
@@ -155,22 +155,45 @@ void mapCodes(struct node *root, string str)
 
 std::string WriteOutString(){
     std::string out;
-    char c;
+    char c, lastChar;
+    std::vector<int> codeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     int count;
-    std::sort(pairSymbCode.begin(), pairSymbCode.end(), [](auto &left, auto &right) {
-        return left.second.length() < right.second.length();
+    lastChar = (char)0x1f;
+
+    std::sort(pairSymbCodeLength.begin(), pairSymbCodeLength.end(), [](auto &left, auto &right) {
+            return left.second < right.second;
     });
 
-    for (auto it : pairSymbCode)
+    for (int i = 0; i < pairSymbCodeLength.size(); i++)
     {
-        // out += charToBin(it.first);
-        // bitset<8> bs = it.second.length();
-        // out.append(bs.to_string());
-        std::cout<<it.first<<" "<<it.second<<endl;
+        int index = pairSymbCodeLength[i].second;
+        codeLengths[index - 1] += 1;
     }
+    /*HEADER*/
+    
+    for (int i = 0; i < codeLengths.size(); i++)
+    {
+        if (codeLengths[i] == 0)
+        {
+            out += "0";
+        }
+        else
+        {
+            out += "1";
+            bitset<5> bs = codeLengths[i];
+            out.append(bs.to_string());
+        }
+    }
+
+    for (auto it: pairSymbCodeLength){
+        out.append(charToBin(it.first));
+    }
+    /*FIM DO HEADER*/
+    buildCodes();
+    std::cout<<buffer.size()<<endl;
     for (int i = 0; i < buffer.size(); i++)
     {
-        out.append(mapSymbCode[buffer[i]]);
+        out.append(mapSymbCodeLength[buffer[i]].first);
     }
 
     while (((out.size()+3) % 8) != 0)
@@ -181,7 +204,61 @@ std::string WriteOutString(){
     bitset<3> bs = count;
 
     out.insert(0, bs.to_string());
+
+    std::cout<<out;
     return out;
+}
+
+void buildCodes(){
+    int count;
+    int code;
+    int last_code;
+    std::vector<int> codes = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    for (int i = 0; i < pairSymbCodeLength.size(); i++)
+    {
+        int index = pairSymbCodeLength[i].second;
+        codes[index - 1] += 1;
+    }
+
+    for (int i = static_cast<int>(codes.size()) - 1; i >= 0; --i)
+    {
+        if (codes.at(i) != 0)
+        {
+            count = i + 1;
+            break;
+        }
+    }
+
+    code =0;
+    std::vector<int> start_code;
+    start_code.resize(count);
+    start_code[count-1] = code;
+    last_code = codes[count - 1];
+    count--;
+    for (int i = count-1; i >= 0; i--)
+    {
+        code = code + last_code;
+        code = code >> 1;
+        start_code[i] = code;
+        last_code = codes[i];
+    }
+
+    std::sort(pairSymbCodeLength.begin(), pairSymbCodeLength.end(), [](auto &left, auto &right) {
+        return left.first < right.first;
+    });
+
+    int tamanho;
+    string codeStr;
+    for(int i =0; i<pairSymbCodeLength.size(); i++){
+        tamanho = pairSymbCodeLength[i].second -1;
+        bitset<16> bs = start_code[tamanho];
+        codeStr = bs.to_string().substr(16-pairSymbCodeLength[i].second);
+
+        mapSymbCodeLength[pairSymbCodeLength[i].first] = make_pair(codeStr, pairSymbCodeLength[i].second);
+        start_code[tamanho] += 1;
+    }
+
 }
 string charToBin(char c)
 {
