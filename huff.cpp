@@ -5,33 +5,71 @@ using namespace std;
 /*Simple implementation of the huffman compression algorithm*/
 
 int filesize;
-std::string buffer;
-std::unordered_map<char, long long> mapSymbAmount;/*-*/
-std::unordered_map<char, string> mapSymbCode;
 
-std::vector<std::pair<char, long long>> pairSymbProb; /*-*/
-std::priority_queue<node *, vector<node *>, compare> heap;
-std::vector<std::pair<char, int>> pairSymbCodeLength;
-std::unordered_map<char, std::pair<std::string, int>> mapSymbCodeLength;
-std::string out;
+string bitString;
+string buffer;
+string out;
+string fileNameIn;
+string fileNameOut;
+
+unordered_map<char, long long> mapSymbAmount;/*-*/
+unordered_map<char, string> mapSymbCode;
+unordered_map<char, pair<string, int>> mapSymbCodeLength;
+priority_queue<node *, vector<node *>, compare> heap;
+vector<pair<char, long long>> pairSymbProb; /*-*/
+vector<pair<char, int>> pairSymbCodeLength;
+vector<int> codeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 void getFileSize(ifstream &file);
 void getFrequency();
 void huffmanEncode();
 void huffmanDecode();
-void mapCodes(struct node *root, string str);
-string readFromFile(ifstream &fileIn);
-std::string WriteOutString();
-std::string charToBin(char c);
+void calcCodeLengths();
+void mapCodes(struct node *root, int len=0);
 void buildCodes();
+void writeBitString();
+string readFromFile(ifstream &fileIn);
+string WriteOutString();
+string charToBin(char c);
+
 int main(int argc, char *argv[])
 {
-    ifstream file("teste.txt", ios::in | ios::binary | ios::ate);
-    getFileSize(file);
-    buffer = readFromFile(file);
-    huffmanEncode();
-    huffmanDecode();
-    file.close();
+
+    string fileMode;
+    if (argc == 4)
+    {
+        fileNameOut = argv[3];
+        fileNameIn  = argv[2];
+        fileMode    = argv[1];
+        ifstream file(fileNameIn, ios::in | ios::binary | ios::ate);
+
+        if (file.is_open())
+        {
+            getFileSize(file);
+            cout << "Your file has : " << filesize << " bytes" << endl;
+            buffer = readFromFile(file);
+            if (fileMode == "compress")
+            {
+                huffmanEncode();
+            }
+            else if (fileMode == "decompress")
+            {
+                writeBitString();
+                huffmanDecode();
+            }
+            else
+            {
+                cout << "No option named " << fileMode << endl;
+            }
+            file.close();
+        }
+    }
+    else
+    {
+        cout << "Wrong format" << endl;
+        cout << "The format is <compress|decompress filenameIn filenameOut>" << endl;
+    }
+
     return 0;
 }
 
@@ -43,88 +81,84 @@ void getFrequency()
         mapSymbAmount[buffer[i]] += 1;
     }
 
-    for (std::unordered_map<char, long long>::iterator it = mapSymbAmount.begin(); it != mapSymbAmount.end(); ++it)
+    for (unordered_map<char, long long>::iterator it = mapSymbAmount.begin(); it != mapSymbAmount.end(); ++it)
     {
-        pairSymbProb.push_back(std::make_pair((char)(it->first), (long long)(it->second)));
+        pairSymbProb.push_back(make_pair((char)(it->first), (long long)(it->second)));
     }
 
-    std::sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
+    sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
         return left.second < right.second;
     });
-    std::sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
+    sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
         return left.first < right.first;
     });
     
 }
+void writeBitString(){
+    for (int i = 0; i < buffer.size(); i++)
+    {   
+        bitset<8> bin(buffer.c_str()[i]);
+        bitString += bin.to_string();
+    }
+}
 
 void huffmanDecode()
 {
-    mapSymbAmount.clear();
-    mapSymbCode.clear();
-    pairSymbProb.clear();
-    pairSymbCodeLength.clear();
-    mapSymbCodeLength.clear();
-    pairSymbCodeLength.clear();
-    /*read Header*/
-    std::unordered_map<string, char> mapCodeSymb;
-
-    int addedZeros = stoi(out.substr(0,3), 0, 2);
-    out.resize(out.size()-addedZeros);
-    std::cout<<endl<<"ENTRANDO NO Decoder"<<endl<<endl;
-    std::vector<int> codes = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    int k =3;
+    string decoding;
+    string decoded;
+    unordered_map<string, char> mapCodeSymb;
+    char c;
+    int strPointer =3;
+    int addedZeros = stoi(bitString.substr(0, 3), 0, 2);
+    bitString.resize(bitString.size() - addedZeros);
+    
     for(int i =0; i<16; i++){
-        if(out[k] == '1'){
-            codes[i] = stoi(out.substr(k+1, 5), 0, 2);
-            k+=6;
+        if (bitString[strPointer] == '1')
+        {
+            codeLengths[i] = stoi(bitString.substr(strPointer + 1, 7), 0, 2);
+            strPointer+=8;
         }else{
-            k+=1;
+            strPointer+=1;
         }
     }
-    char c;
-    for(int j = 0; j<codes.size(); j++){
-        for(int i =0; i< codes[j]; i++){
-           c = stol(out.substr(k, 8), 0, 2);
-           pairSymbCodeLength.push_back(make_pair(c, j+1));
-           k+=8;
+    
+    for (int j = 0; j < codeLengths.size(); j++)
+    {
+        for (int i = 0; i < codeLengths[j]; i++)
+        {
+            c = stol(bitString.substr(strPointer, 8), 0, 2);
+            pairSymbCodeLength.push_back(make_pair(c, j + 1));
+            strPointer += 8;
         }
     }
     buildCodes();
-    std::cout<<out.substr(k)<<endl<<endl;
-    /*Até aqui tudo certo*/
-
-    string decoding;
-    string decoded;
-    string fin;
-    for (unordered_map<char, std::pair<std::string, int>>::iterator i = mapSymbCodeLength.begin(); i != mapSymbCodeLength.end(); ++i){
+    
+    for (unordered_map<char, pair<string, int>>::iterator i = mapSymbCodeLength.begin(); i != mapSymbCodeLength.end(); ++i){
         mapCodeSymb[i->second.first] = i->first;
         }
 
-    for (std::string::iterator it = out.begin() + k; it != out.end(); it++)
+    string dec;
+    for (string::iterator it = bitString.begin() + strPointer; it != bitString.end(); it++)
     {
         decoding += *it;
-        std::unordered_map<string, char>::const_iterator g = mapCodeSymb.find(decoding);
-        if (g!=mapCodeSymb.end()){
-            fin+=g->second;
-            decoded.clear();
+        try{
+            decoded += mapCodeSymb.at(decoding);
             decoding.clear();
         }
+        catch (const out_of_range& e)
+        {
+        }
     }
-    std::cout<<fin;
-    /*Lê o arquivo binario*/
-    //std::string bitString;
-    // while (fileBuffer.size() > 0)
-    // {
-    //     bitString.append(charToBin(fileBuffer.at(0)));
-    //     fileBuffer.erase(0, 1);
-    // }
-
+    ofstream output(fileNameOut, ios::out | ios::binary);
+    output << decoded; //WRITE TO FILE
+    output.close();
+    
 }
 
 
 void huffmanEncode(){
     getFrequency();
-    std::string outbuffer;
+    string outbuffer;
     
     struct node *nLeft, *nRight, *nTop;    
     for(int i=0; i< pairSymbProb.size(); i++){
@@ -142,10 +176,10 @@ void huffmanEncode(){
         heap.push(nTop);
     }
 
-    mapCodes(heap.top(), ""); /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
+    mapCodes(heap.top()); /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
     outbuffer = WriteOutString();
 
-    ofstream output("teste.bin", ios::out | ios::binary);
+    ofstream output(fileNameOut, ios::out | ios::binary);
     unsigned long c;
     int counter=0;
     while (counter<outbuffer.size())
@@ -158,28 +192,25 @@ void huffmanEncode(){
     output.close();
 }
 
-void mapCodes(struct node *root, string str)
+void mapCodes(struct node *root, int len)
 {
     /*Essa função pode ser melhorada pois só precisamos calcular o tamanho do código de cada elemento*/
     if (!root)
         return;
 
     if (root->leaf){
-        pairSymbCodeLength.push_back(make_pair(root->code, str.length()));
+        pairSymbCodeLength.push_back(make_pair(root->code, len));
     }
-
-    mapCodes(root->left, str + "0");
-    mapCodes(root->right, str + "1");
+    mapCodes(root->left, len+1);
+    mapCodes(root->right, len+1);
 }
 
-std::string WriteOutString(){
-    char c, lastChar;
-    std::vector<int> codeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    int count;
-    lastChar = (char)0x1f;
-
-    std::sort(pairSymbCodeLength.begin(), pairSymbCodeLength.end(), [](auto &left, auto &right) {
-            return left.second < right.second;
+void calcCodeLengths(){
+    sort(pairSymbCodeLength.begin(), pairSymbCodeLength.end(), [](auto &left, auto &right) {
+        if(left.second==right.second){
+            return left.first<right.first;
+        }
+        return left.second < right.second;
     });
 
     for (int i = 0; i < pairSymbCodeLength.size(); i++)
@@ -187,8 +218,11 @@ std::string WriteOutString(){
         int index = pairSymbCodeLength[i].second;
         codeLengths[index - 1] += 1;
     }
+}
+string WriteOutString(){
+    int count=0;
     /*HEADER*/
-    
+    calcCodeLengths();
     for (int i = 0; i < codeLengths.size(); i++)
     {
         if (codeLengths[i] == 0)
@@ -198,7 +232,7 @@ std::string WriteOutString(){
         else
         {
             out += "1";
-            bitset<5> bs = codeLengths[i];
+            bitset<7> bs = codeLengths[i];
             out.append(bs.to_string());
         }
     }
@@ -206,9 +240,10 @@ std::string WriteOutString(){
     for (auto it: pairSymbCodeLength){
         out.append(charToBin(it.first));
     }
+
     /*FIM DO HEADER*/
     buildCodes();
-    std::cout<<buffer.size()<<endl;
+
     for (int i = 0; i < buffer.size(); i++)
     {
         out.append(mapSymbCodeLength[buffer[i]].first);
@@ -222,62 +257,48 @@ std::string WriteOutString(){
     bitset<3> bs = count;
 
     out.insert(0, bs.to_string());
-
-    std::cout<<out<<endl<<endl;
     return out;
 }
 
 void buildCodes(){
-    int count;
-    int code;
-    int last_code;
-    std::vector<int> codes = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    vector<int> start_code;
+    int count, code, nCodes;
+    code =0;
 
-    for (int i = 0; i < pairSymbCodeLength.size(); i++)
+    for (int i = static_cast<int>(codeLengths.size()) - 1; i >= 0; --i)
     {
-        int index = pairSymbCodeLength[i].second;
-        codes[index - 1] += 1;
-    }
-
-    for (int i = static_cast<int>(codes.size()) - 1; i >= 0; --i)
-    {
-        if (codes.at(i) != 0)
+        if (codeLengths.at(i) != 0)
         {
             count = i + 1;
             break;
         }
     }
 
-    code =0;
-    std::vector<int> start_code;
     start_code.resize(count);
     start_code[count-1] = code;
-    last_code = codes[count - 1];
+    nCodes = codeLengths[count - 1];
     count--;
     for (int i = count-1; i >= 0; i--)
     {
-        code = code + last_code;
+        code = code + nCodes;
         code = code >> 1;
         start_code[i] = code;
-        last_code = codes[i];
+        nCodes = codeLengths[i];
     }
 
-    std::sort(pairSymbCodeLength.begin(), pairSymbCodeLength.end(), [](auto &left, auto &right) {
-        return left.first < right.first;
-    });
-
-    int tamanho;
+    int codeLen;
     string codeStr;
+    
     for(int i =0; i<pairSymbCodeLength.size(); i++){
-        tamanho = pairSymbCodeLength[i].second -1;
-        bitset<16> bs = start_code[tamanho];
+        codeLen = pairSymbCodeLength[i].second - 1;
+        bitset<16> bs = start_code[codeLen];
         codeStr = bs.to_string().substr(16-pairSymbCodeLength[i].second);
 
         mapSymbCodeLength[pairSymbCodeLength[i].first] = make_pair(codeStr, pairSymbCodeLength[i].second);
-        start_code[tamanho] += 1;
+        start_code[codeLen] += 1;
     }
-
 }
+
 string charToBin(char c)
 {
     string charBin;
