@@ -201,9 +201,9 @@ void decompressFile(ifstream &file)
     {
         for (int i = 0; i < offLenCodeLengths[j]; i++)
         {
-            aux = stoll(bitString.substr(strPointer, 32), 0, 2);
+            aux = stoll(bitString.substr(strPointer, 8*sizeof(USIZE)), 0, 2);
             pairOffLenCodeLength.push_back(make_pair(aux, j + 1));
-            strPointer += 32;
+            strPointer += 8 * sizeof(USIZE);
         }
     }
 
@@ -299,11 +299,11 @@ void decompressFile(ifstream &file)
     output.close();
 }
 
-string uint32ToBin(USIZE c)
+string offLenToBin(USIZE c)
 {
     string charBin;
     charBin.clear();
-    for (int i = 31; i >= 0; --i)
+    for (int i = 8*sizeof(USIZE)-1; i >= 0; --i)
     {
         (c & (1 << i)) ? charBin += '1' : charBin += '0';
     }
@@ -625,7 +625,7 @@ string WriteOutString()
 
     for (auto it : pairOffLenCodeLength)
     {
-        out.append(uint32ToBin(it.first));
+        out.append(offLenToBin(it.first));
     }
 
     /*FIM DO HEADER*/
