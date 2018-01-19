@@ -1,11 +1,9 @@
 #include "deflate.h"
-#define DICTSIZE 255
+#define DICTSIZE 32767
 #define LOOKAHEADSIZE 255
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
-#define DICTBITS 8
+#define DICTBITS 15
 #define LOOKBITS 8
-
-
 
 using namespace std;
 
@@ -136,6 +134,7 @@ void CompressFile(ifstream &file)
         aux |= it.foundString.length();
         bufferOffLen.push_back(aux);
         bufferChar.push_back(it.nextChar);
+        std::cout<<it.offset<<" "<<it.foundString.length()<<" "<<it.nextChar<<endl;
         }
     huffmanEncode();
 }
@@ -252,6 +251,9 @@ void decompressFile(ifstream &file)
 
     }
 
+    for(int i =0; i<offLen.size(); i++){
+        std::cout << (offLen[i] >> SHIFT) << " " << (offLen[i] & MASK) << " "<<ch[i]<<endl;
+    }
     decoding.clear();
 
 
@@ -636,15 +638,8 @@ string WriteOutString()
     //     cout << it.nextChar<<endl;
     // }
 
-    // for (auto it : mapCharCodeLength)
-    // {
-    //     cout << it.first <<" "<<it.second.first<< endl;
-    // }
+   
 
-    // for (auto it : mapOffLenCodeLength)
-    // {
-    //     cout << it.first << " " << it.second.first << endl;
-    // }
     USIZE aux;
 
     for (auto it : codeTriples)
