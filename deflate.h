@@ -30,12 +30,12 @@ struct compare1
 struct node2
 {
     long long key_value;
-    uint16_t code;
+    USIZE code;
     bool leaf;
     node2 *left;
     node2 *right;
 
-    node2(uint16_t code, long long key_value, bool leaf)
+    node2(USIZE code, long long key_value, bool leaf)
     {
         this->code = code;
         this->key_value = key_value;
