@@ -1,9 +1,9 @@
 #include "deflate.h"
-#define DICTSIZE 255
-#define LOOKAHEADSIZE 255
+#define DICTSIZE 15
+#define LOOKAHEADSIZE 2047
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
-#define DICTBITS 8
-#define LOOKBITS 8
+#define DICTBITS 4
+#define LOOKBITS 11
 
 using namespace std;
 
@@ -346,7 +346,6 @@ void getNextWindow(size_t matchSize, size_t jump)
 
     dict.append(fileBuffer.begin() + lookaheadPointer - matchSize, fileBuffer.begin() + lookaheadPointer);
     lookahead.append(fileBuffer.begin() + windowPointer - matchSize, fileBuffer.begin() + windowPointer);
-    lookahead.erase(0, matchSize);
 
     if (dict.size() > DICTSIZE)
     {
@@ -363,6 +362,7 @@ void getNextWindow(size_t matchSize, size_t jump)
         windowPointer = filesize;
         lookahead.clear();
     }
+    lookahead.erase(0, matchSize);
 }
 
 code getBiggestSubstring()
