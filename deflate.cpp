@@ -1,8 +1,8 @@
 #include "deflate.h"
-#define DICTSIZE 32767
+#define DICTSIZE 255
 #define LOOKAHEADSIZE 255
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
-#define DICTBITS 15
+#define DICTBITS 8
 #define LOOKBITS 8
 
 using namespace std;
@@ -134,7 +134,6 @@ void CompressFile(ifstream &file)
         aux |= it.foundString.length();
         bufferOffLen.push_back(aux);
         bufferChar.push_back(it.nextChar);
-        std::cout<<it.offset<<" "<<it.foundString.length()<<" "<<it.nextChar<<endl;
         }
     huffmanEncode();
 }
@@ -227,14 +226,12 @@ void decompressFile(ifstream &file)
         try
         {
             offLen.push_back(mapOffLenCode.at(decoding));
-            // std::cout << (mapOffLenCode.at(decoding)>>8) << " " << (mapOffLenCode.at(decoding)&0xFF)<<" ";
             decoding.clear();
             for (string::iterator jt = it + 1; jt != bitString.end(); jt++)
             {
                 decoding += *jt;
                 try
                 {
-                    // std::cout << mapCharCode.at(decoding)<<endl;
                     ch.push_back(mapCharCode.at(decoding));
                     decoding.clear();
                     it = jt;
@@ -250,14 +247,7 @@ void decompressFile(ifstream &file)
         }
 
     }
-
-    for(int i =0; i<offLen.size(); i++){
-        std::cout << (offLen[i] >> SHIFT) << " " << (offLen[i] & MASK) << " "<<ch[i]<<endl;
-    }
     decoding.clear();
-
-
-/*Daqui pra baixo é do LZ77*/
 
     string bitChar;
     string lookaheadBits;
@@ -356,13 +346,11 @@ void getNextWindow(size_t matchSize, size_t jump)
 
     dict.append(fileBuffer.begin() + lookaheadPointer - matchSize, fileBuffer.begin() + lookaheadPointer);
     lookahead.append(fileBuffer.begin() + windowPointer - matchSize, fileBuffer.begin() + windowPointer);
+    lookahead.erase(0, matchSize);
+
     if (dict.size() > DICTSIZE)
     {
         dict.erase(0, matchSize);
-    }
-    if (lookahead.size() > LOOKAHEADSIZE or lookahead.size() >= filesize)
-    {
-        lookahead.erase(0, matchSize);
     }
     if (windowPointer >= filesize)
     {
@@ -400,8 +388,6 @@ code getBiggestSubstring()
             a = lookahead[i];
             if (i == lookahead.size() - 1)
             {
-                // cout<<"entrei";
-                // a = fileBuffer[windowPointer];
                 break;
             }
         }
@@ -445,7 +431,6 @@ void getFrequency()
     });
 
 
-    /*Daqui pra baixo é USIZE*/
     for (long long i = 0; i < bufferOffLen.size(); i++)
     {
         mapOffLenAmount[bufferOffLen[i]] += 1;
@@ -526,7 +511,6 @@ void huffmanEncode()
 
 void mapCodes1(struct node1 *root, int len)
 {
-    /*Essa função pode ser melhorada pois só precisamos calcular o tamanho do código de cada elemento*/
     if (!root)
         return;
 
@@ -540,7 +524,6 @@ void mapCodes1(struct node1 *root, int len)
 
 void mapCodes2(struct node2 *root, int len)
 {
-    /*Essa função pode ser melhorada pois só precisamos calcular o tamanho do código de cada elemento*/
     if (!root)
         return;
 
@@ -633,12 +616,6 @@ string WriteOutString()
     /*FIM DO HEADER*/
     buildCodes1();
     buildCodes2();
-    // for (auto it : codeTriples)
-    // {
-    //     cout << it.nextChar<<endl;
-    // }
-
-   
 
     USIZE aux;
 
