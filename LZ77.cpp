@@ -249,15 +249,13 @@ void getNextWindow(size_t matchSize, size_t jump)
 
     dict.append(fileBuffer.begin() + lookaheadPointer - matchSize, fileBuffer.begin() + lookaheadPointer);
     lookahead.append(fileBuffer.begin() + windowPointer - matchSize, fileBuffer.begin() + windowPointer);
+    lookahead.erase(0, matchSize);
+
     if (dict.size() > DICTSIZE)
     {
         dict.erase(0, matchSize);
     }
-    if (lookahead.size() > LOOKAHEADSIZE or lookahead.size() >= filesize)
-    {
-        lookahead.erase(0, matchSize);
-    }
-    if(windowPointer >=filesize){
+    if(windowPointer >filesize){
         windowPointer = filesize;
         lookahead.resize(windowPointer-lookaheadPointer);
     }
@@ -292,8 +290,6 @@ code getBiggestSubstring()
             a = lookahead[i];
             if (i == lookahead.size()-1)
             {   
-                // cout<<"entrei";
-                // a = fileBuffer[windowPointer];
                 break;
             }
         }
