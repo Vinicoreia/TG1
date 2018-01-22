@@ -1,9 +1,9 @@
 #include "deflate.h"
-#define DICTSIZE 15
-#define LOOKAHEADSIZE 2047
+#define DICTSIZE 255
+#define LOOKAHEADSIZE 255
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
-#define DICTBITS 4
-#define LOOKBITS 11
+#define DICTBITS 8
+#define LOOKBITS 8
 
 using namespace std;
 
@@ -30,8 +30,8 @@ string out;
 
 std::vector<USIZE> bufferOffLen;
 std::vector<char> bufferChar;
-unordered_map<char, long long> mapcharAmount; /*-*/
-vector<pair<char, long long>> paircharProb;   /*-*/
+unordered_map<char, long long> mapcharAmount;    /*-*/
+vector<pair<char, long long>> paircharProb;      /*-*/
 vector<pair<USIZE, long long>> pairOffLenProb;   /*-*/
 unordered_map<USIZE, long long> mapOffLenAmount; /*-*/
 priority_queue<node1 *, vector<node1 *>, compare1> heap1;
@@ -68,8 +68,6 @@ void buildCodes2();
 
 void writeBitString();
 string WriteOutString();
-
-
 
 int main(int argc, char *argv[])
 {
@@ -127,14 +125,15 @@ void CompressFile(ifstream &file)
         getNextWindow(elementTuple.foundString.length(), elementTuple.offset);
     }
     /*Aqui eu tenho todas as triplas do tipo offset, length, nextchar*/
-    USIZE aux=0;
-    for(auto it:codeTriples){
+    USIZE aux = 0;
+    for (auto it : codeTriples)
+    {
         aux = it.offset;
         aux = aux << SHIFT;
         aux |= it.foundString.length();
         bufferOffLen.push_back(aux);
         bufferChar.push_back(it.nextChar);
-        }
+    }
     huffmanEncode();
 }
 void writeBitString()
@@ -199,7 +198,7 @@ void decompressFile(ifstream &file)
     {
         for (int i = 0; i < offLenCodeLengths[j]; i++)
         {
-            aux = stoll(bitString.substr(strPointer, 8*sizeof(USIZE)), 0, 2);
+            aux = stoll(bitString.substr(strPointer, 8 * sizeof(USIZE)), 0, 2);
             pairOffLenCodeLength.push_back(make_pair(aux, j + 1));
             strPointer += 8 * sizeof(USIZE);
         }
@@ -245,7 +244,6 @@ void decompressFile(ifstream &file)
         catch (const out_of_range &e)
         {
         }
-
     }
     decoding.clear();
 
@@ -256,12 +254,13 @@ void decompressFile(ifstream &file)
     int jump;
     int len;
     char nextChar;
-    for(int k = 0; k< ch.size(); k++)
+    for (int k = 0; k < ch.size(); k++)
     {
         nextChar = ch[k];
         jump = offLen[k] >> SHIFT;
         len = offLen[k] & MASK;
-        if(jump == 0){
+        if (jump == 0)
+        {
             outString += nextChar;
             dict += nextChar;
             windowPointer += 1;
@@ -295,7 +294,7 @@ string offLenToBin(USIZE c)
 {
     string charBin;
     charBin.clear();
-    for (int i = 8*sizeof(USIZE)-1; i >= 0; --i)
+    for (int i = 8 * sizeof(USIZE) - 1; i >= 0; --i)
     {
         (c & (1 << i)) ? charBin += '1' : charBin += '0';
     }
@@ -346,6 +345,7 @@ void getNextWindow(size_t matchSize, size_t jump)
 
     dict.append(fileBuffer.begin() + lookaheadPointer - matchSize, fileBuffer.begin() + lookaheadPointer);
     lookahead.append(fileBuffer.begin() + windowPointer - matchSize, fileBuffer.begin() + windowPointer);
+    lookahead.erase(0, matchSize);
 
     if (dict.size() > DICTSIZE)
     {
@@ -362,7 +362,6 @@ void getNextWindow(size_t matchSize, size_t jump)
         windowPointer = filesize;
         lookahead.clear();
     }
-    lookahead.erase(0, matchSize);
 }
 
 code getBiggestSubstring()
@@ -429,7 +428,6 @@ void getFrequency()
     sort(paircharProb.begin(), paircharProb.end(), [](auto &left, auto &right) {
         return left.first < right.first;
     });
-
 
     for (long long i = 0; i < bufferOffLen.size(); i++)
     {
@@ -573,7 +571,7 @@ string WriteOutString()
 {
     int count = 0;
     /*HEADER*/
-    
+
     for (int i = 0; i < charCodeLengths.size(); i++)
     {
         if (charCodeLengths[i] == 0)
@@ -592,8 +590,7 @@ string WriteOutString()
     {
         out.append(charToBin(it.first));
     }
-    
-    
+
     for (int i = 0; i < offLenCodeLengths.size(); i++)
     {
         if (offLenCodeLengths[i] == 0)
@@ -627,7 +624,7 @@ string WriteOutString()
         out.append(mapOffLenCodeLength[aux].first);
         out.append(mapCharCodeLength[it.nextChar].first);
     }
-    
+
     while (((out.size() + 3) % 8) != 0)
     {
         out += "0";
