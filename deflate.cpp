@@ -1,9 +1,9 @@
 #include "deflate.h"
-#define DICTSIZE 255
-#define LOOKAHEADSIZE 255
+#define DICTSIZE 0
+#define LOOKAHEADSIZE 8191
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
-#define DICTBITS 8
-#define LOOKBITS 8
+#define DICTBITS 3
+#define LOOKBITS 13
 
 using namespace std;
 
