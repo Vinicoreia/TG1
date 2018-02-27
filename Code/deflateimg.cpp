@@ -1,9 +1,11 @@
-#include "deflate.h"
+#include "deflateimg.h"
+#include <unistd.h>
 #define DICTSIZE 0
-#define LOOKAHEADSIZE 8191
+#define DECOMPDICT 1
+#define LOOKAHEADSIZE 32767
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
-#define DICTBITS 3
-#define LOOKBITS 13
+#define DICTBITS 1
+#define LOOKBITS 15
 
 using namespace std;
 
@@ -120,6 +122,7 @@ void CompressFile(ifstream &file)
 
     while (!lookahead.empty())
     {
+        std::cout<<"tuple"<<endl;
         elementTuple = getBiggestSubstring();
         codeTriples.push_back(elementTuple);
         getNextWindow(elementTuple.foundString.length(), elementTuple.offset);
@@ -264,7 +267,7 @@ void decompressFile(ifstream &file)
             outString += nextChar;
             dict += nextChar;
             windowPointer += 1;
-            if (dict.size() > DICTSIZE)
+            if (dict.size() > DECOMPDICT)
             {
                 dict.erase(0, 1);
             }
@@ -278,7 +281,7 @@ void decompressFile(ifstream &file)
             outString += nextChar;
             dict.append(outString.substr(windowPointer, len + 1));
             windowPointer += len + 1;
-            if (dict.size() > DICTSIZE)
+            if (dict.size() > DECOMPDICT)
             {
                 dict.erase(0, len + 1);
             }
@@ -343,11 +346,10 @@ void getNextWindow(size_t matchSize, size_t jump)
     windowPointer += matchSize;
     dictPointer += matchSize;
 
+    std::cout << "NEXT " <<lookahead.size()<<" "<<windowPointer<<" "<<filesize<< endl;
     dict.append(fileBuffer.begin() + lookaheadPointer - matchSize, fileBuffer.begin() + lookaheadPointer);
-    
-    if (windowPointer <= filesize)
-    {
-        lookahead.append(fileBuffer.begin() + windowPointer - matchSize, fileBuffer.begin() + windowPointer);
+    if(windowPointer<=filesize){
+    lookahead.append(fileBuffer.begin() + windowPointer - matchSize, fileBuffer.begin() + windowPointer);
     }
     lookahead.erase(0, matchSize);
 
