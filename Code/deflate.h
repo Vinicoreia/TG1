@@ -1,7 +1,7 @@
 #include <bits/stdc++.h>
 #define USIZE uint16_t
-#define SHIFT 13
-#define MASK 0x1FFF
+#define SHIFT 8
+#define MASK 0xFF
 struct node1
 {
     long long key_value;
