@@ -122,7 +122,6 @@ void CompressFile(ifstream &file)
 
     while (!lookahead.empty())
     {
-        std::cout<<"tuple"<<endl;
         elementTuple = getBiggestSubstring();
         codeTriples.push_back(elementTuple);
         getNextWindow(elementTuple.foundString.length(), elementTuple.offset);
@@ -346,7 +345,6 @@ void getNextWindow(size_t matchSize, size_t jump)
     windowPointer += matchSize;
     dictPointer += matchSize;
 
-    std::cout << "NEXT " <<lookahead.size()<<" "<<windowPointer<<" "<<filesize<< endl;
     dict.append(fileBuffer.begin() + lookaheadPointer - matchSize, fileBuffer.begin() + lookaheadPointer);
     if(windowPointer<=filesize){
     lookahead.append(fileBuffer.begin() + windowPointer - matchSize, fileBuffer.begin() + windowPointer);
