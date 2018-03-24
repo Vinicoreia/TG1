@@ -65,7 +65,7 @@ int Encode(string file1, string file2) {
 		}
 	}
 
-	if (readvector.size() > 0) { //Read lesser than blocksize bytes and found eof
+	if (readvector.size() > 0) { //Read less than blocksize bytes and found eof
 		Data data(readvector.size());
 
 		for (int i = 0; i < readvector.size(); i++) {
