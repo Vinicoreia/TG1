@@ -14,7 +14,7 @@
 #define LOOKBITS floor(log2(LOOKAHEADSIZE) + 1)
 #define DICTBITS floor(log2(DICTSIZE) + 1)
 
-
+std::string filebuffer;
 /*O LZ77 vai receber os dados já tratados, cada .cpp deve funcionar atomicamente*/
 
 std::string getChars(int position, int len, std::string buffer){
@@ -24,15 +24,15 @@ std::string getChars(int position, int len, std::string buffer){
     }
     return chars;
 }
+typedef struct Data
+{
+    size_t offset;
+    std::string match;
+    char nextChar;
 
-class Data{
-    public:
-        Data();
-        ~Data();
-        size_t offset;
-        std::string match;
-        char nextChar;
-};
+    Data(size_t offset_, std::string match_, char nextChar_) : offset(offset_), match(match_), nextChar(nextChar_){};
+} Data;
+
 class Dictionary{
     public:
         Dictionary();
@@ -46,25 +46,36 @@ class Dictionary{
 };
 class Lookahead{
     public:
+        std::string lookahead;
         Lookahead(int filesize);
         ~Lookahead();
-        
         size_t lpb=0; /*lookahead pointer to begin of lookahead*/
         size_t lpe = 0; /*lookahead pointer to end of lookahead*/
 
         std::deque<Data> triplas;
 };
+
+
 Lookahead::Lookahead(int filesize){
+    if(filesize==1){
+        exit(1);
+    }
 
     if (filesize > LOOKAHEADSIZE)
     {
-        windowPointer += LOOKAHEADSIZE;
+        lpe += LOOKAHEADSIZE;
+        lookahead.append(getChars(1, LOOKAHEADSIZE, filebuffer));
+        triplas.emplace_back(0,0,filebuffer[0]);
     }
     else
     {
-        windowPointer += filesize;
+        lpe += filesize;
+        lookahead.append(getChars(1, filesize-1, filebuffer));
     }
+
+
 };
+
 
 Dictionary::Dictionary(){
 
