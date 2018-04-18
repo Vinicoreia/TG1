@@ -7,14 +7,15 @@
 #include <unordered_map>
 #include "lz77.h"
 #include <algorithm>
-#define LOOKAHEADSIZE 255
-#define DICTSIZE 255
+#define LOOKAHEADSIZE 511
+#define DICTSIZE 4095
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
 
 #define LOOKBITS floor(log2(LOOKAHEADSIZE) + 1)
 #define DICTBITS floor(log2(DICTSIZE) + 1)
 
 std::string filebuffer;
+int filesize;
 /*O LZ77 vai receber os dados já tratados, cada .cpp deve funcionar atomicamente*/
 
 std::string getChars(int position, int len, std::string buffer){
@@ -37,6 +38,8 @@ class Dictionary{
     public:
         std::string dictionary;
         Dictionary();
+        void updateDict(size_t offset);
+        size_t matchSz = 0;
         size_t dpb = 0; /*Dictionary pointer to begin of Dictionary*/
         size_t dpe = 0; /*Dictionary pointer to end of Dictionary*/
         void hashDict(); /*creates an unordered_map of the values in the dict to reduce search for the biggest match*/
@@ -45,6 +48,13 @@ class Dictionary{
         std::deque<Data> triplas;
 };
 
+void Dictionary::updateDict(size_t offset){
+    dpe+=offset;
+    if(dpe-dpb > DICTSIZE){
+        dpb+=offset;
+    }
+    dictionary = filebuffer.substr(dpb, dpe-dpb);
+}
 class Lookahead{
     
     public:
@@ -52,7 +62,22 @@ class Lookahead{
         Lookahead(int filesize);
         size_t lpb=0; /*lookahead pointer to begin of lookahead*/
         size_t lpe = 0; /*lookahead pointer to end of lookahead*/
+        void updateLook(size_t offset);
 };
+
+void Lookahead::updateLook(size_t offset)
+{
+    lpe += offset;
+    lpb += offset;
+    if(lpb == filesize){
+        lookahead.clear();
+        return;
+    }
+    if(lpe > filesize){
+        lpe = filesize;
+    }
+        lookahead = filebuffer.substr(lpb, lpe - lpb);
+}
 
 Lookahead::Lookahead(int filesize){
 
@@ -98,6 +123,7 @@ void Dictionary::findBestMatch(std::string lookahead)
     std::string strMatch;
     std::vector<int> positions;
     int i;
+    matchSz = 1;
     try{
         positions = hash.at(a);/* initial position to search*/
     }catch(const std::out_of_range& e){
@@ -132,6 +158,7 @@ void Dictionary::findBestMatch(std::string lookahead)
         index++;
     }
     triplas.emplace_back(d);
+    matchSz = d.match.size();
     return;
 }
 
@@ -140,6 +167,15 @@ int main(){
 
     Lookahead * look = new Lookahead(6);
     Dictionary *dict = new Dictionary();
+    while(!look->lookahead.empty()){
+        dict->findBestMatch(look->lookahead);
+        dict->updateDict(dict->matchSz);
+        look->updateLook(dict->matchSz);
+    }
+
+    for(int i =0; i< dict->triplas.size(); i++){
+        std::cout << dict->triplas[i].offset << " " << dict->triplas[i].match.size() <<" "<< dict->triplas[i].nextChar << std::endl;
+    }
     delete look;
     delete dict;
     return 0;
