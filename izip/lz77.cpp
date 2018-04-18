@@ -6,7 +6,7 @@
 #include <deque>
 #include <unordered_map>
 #include "lz77.h"
-
+#include <algorithm>
 #define LOOKAHEADSIZE 255
 #define DICTSIZE 255
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
@@ -39,9 +39,10 @@ class Dictionary{
         Dictionary();
         size_t dpb = 0; /*Dictionary pointer to begin of Dictionary*/
         size_t dpe = 0; /*Dictionary pointer to end of Dictionary*/
-        void hashDict(char a, int pos); /*creates an unordered_map of the values in the dict to reduce search for the biggest match*/
-        Data findBestMatch(std::string lookahead);/*This function has to return the Data to the lookahead*/
+        void hashDict(); /*creates an unordered_map of the values in the dict to reduce search for the biggest match*/
+        void findBestMatch(std::string lookahead);/*This function has to return the Data to the lookahead*/
         std::unordered_map<char, std::vector<int>> hash;
+        std::deque<Data> triplas;
 };
 
 class Lookahead{
@@ -51,9 +52,7 @@ class Lookahead{
         Lookahead(int filesize);
         size_t lpb=0; /*lookahead pointer to begin of lookahead*/
         size_t lpe = 0; /*lookahead pointer to end of lookahead*/
-        std::deque<Data> triplas;
 };
-
 
 Lookahead::Lookahead(int filesize){
 
@@ -73,34 +72,67 @@ Lookahead::Lookahead(int filesize){
         lookahead.append(getChars(1, filesize-1, filebuffer));
     }
     lpb += 1;
-    triplas.emplace_back(0, "", filebuffer[0]);
 };
 
 
 Dictionary::Dictionary(){
-    dpe+=1;
+    dpe += 1;
     dictionary.append(getChars(0, 1, filebuffer));
-    hashDict(dictionary[0], 0);
+    triplas.emplace_back(0, "", filebuffer[0]);
+    hashDict();
 };
 
-void Dictionary::hashDict(char a, int pos)
+void Dictionary::hashDict()
 {
-    hash[a].push_back(pos);
+    hash.clear();
+    for (int i = 0; i < dictionary.size(); i++)
+    {
+        hash[dictionary[i]].push_back(i);
+    }
 }
 
-Data Dictionary::findBestMatch(std::string lookahead)
+void Dictionary::findBestMatch(std::string lookahead)
 {
     std::vector<Data> found;
     char a = lookahead[0];
-    try{
-        size_t ipos = hash[a].at(0);/* initial position to search*/
-    }catch(const std::out_of_range){
-        /*Caso não tenha a letra no hash retorna 0,"",letra*/
-    }
     std::string strMatch;
+    std::vector<int> positions;
+    int i;
+    try{
+        positions = hash.at(a);/* initial position to search*/
+    }catch(const std::out_of_range& e){
+        /*Caso não tenha a letra no hash retorna 0,"",letra*/
+        triplas.emplace_back(0, "", a);
+        return;
+    }
 
-    
+    for(auto &pos : positions){
+        strMatch.clear();
+        i=0;
+        while (dictionary[(pos + i) % dictionary.size()] == lookahead[i] and i < lookahead.size())
+        {
+            strMatch += (lookahead[i]);
+            i++;
+        }
+        found.push_back({dictionary.size()- pos, strMatch, lookahead[i]}); /* lookahead[i] is now the next char*/
+        
+    }
 
+    std::reverse(found.begin(), found.end());
+    int index = 0;
+    size_t max = 0;
+    Data d(0,"",0);
+    for (auto vec : found)
+    {
+        if (vec.match.length() > max)
+        {
+            d = vec;
+            max = vec.match.length();
+        }
+        index++;
+    }
+    triplas.emplace_back(d);
+    return;
 }
 
 int main(){
@@ -108,7 +140,6 @@ int main(){
 
     Lookahead * look = new Lookahead(6);
     Dictionary *dict = new Dictionary();
-    std::cout<<dict->hash['t'].at(0);
     delete look;
     delete dict;
     return 0;
