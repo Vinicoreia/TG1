@@ -20,37 +20,37 @@ std::string filebuffer;
 std::string getChars(int position, int len, std::string buffer){
     std::string chars;
     for(int i=0; i<len; i++){
-        chars += buffer[position+i];
+        chars += buffer[position + i];
     }
     return chars;
 }
 struct Data
 {
     size_t offset;
-    size_t matchSize;
+    std::string match;
     char nextChar;
-    Data(size_t offset, size_t matchSize, char nextChar) : offset(offset), matchSize(matchSize), nextChar(nextChar){}
+    Data(size_t offset, std::string match, char nextChar) : offset(offset), match(match), nextChar(nextChar) {}
 };
 
 class Dictionary{
+    /*The dictionary is responsible to get the biggest match in the dictionary*/
     public:
         std::string dictionary;
         Dictionary();
-        ~Dictionary();
-        int updateWindow();
-        int getNextWindow();
         size_t dpb = 0; /*Dictionary pointer to begin of Dictionary*/
         size_t dpe = 0; /*Dictionary pointer to end of Dictionary*/
-
+        void hashDict(char a, int pos); /*creates an unordered_map of the values in the dict to reduce search for the biggest match*/
+        Data findBestMatch(std::string lookahead);/*This function has to return the Data to the lookahead*/
         std::unordered_map<char, std::vector<int>> hash;
 };
+
 class Lookahead{
+    
     public:
         std::string lookahead;
         Lookahead(int filesize);
         size_t lpb=0; /*lookahead pointer to begin of lookahead*/
         size_t lpe = 0; /*lookahead pointer to end of lookahead*/
-
         std::deque<Data> triplas;
 };
 
@@ -73,23 +73,43 @@ Lookahead::Lookahead(int filesize){
         lookahead.append(getChars(1, filesize-1, filebuffer));
     }
     lpb += 1;
-    triplas.emplace_back(0, 0, filebuffer[0]);
+    triplas.emplace_back(0, "", filebuffer[0]);
 };
 
 
 Dictionary::Dictionary(){
     dpe+=1;
     dictionary.append(getChars(0, 1, filebuffer));
+    hashDict(dictionary[0], 0);
 };
 
+void Dictionary::hashDict(char a, int pos)
+{
+    hash[a].push_back(pos);
+}
 
+Data Dictionary::findBestMatch(std::string lookahead)
+{
+    std::vector<Data> found;
+    char a = lookahead[0];
+    try{
+        size_t ipos = hash[a].at(0);/* initial position to search*/
+    }catch(const std::out_of_range){
+        /*Caso não tenha a letra no hash retorna 0,"",letra*/
+    }
+    std::string strMatch;
 
+    
+
+}
 
 int main(){
     filebuffer = "teste";
 
     Lookahead * look = new Lookahead(6);
-    std::cout << look->triplas.at(0).nextChar;
+    Dictionary *dict = new Dictionary();
+    std::cout<<dict->hash['t'].at(0);
     delete look;
+    delete dict;
     return 0;
 }
