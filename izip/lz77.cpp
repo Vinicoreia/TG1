@@ -8,13 +8,15 @@
 #include "lz77.h"
 #include <bitset>
 #include <sstream>
+#include <chrono>
 #include <algorithm>
-#define LOOKAHEADSIZE 511
-#define DICTSIZE 32767
+#define LOOKAHEADSIZE 255
+#define DICTSIZE 16383
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
 
 #define LOOKBITS floor(log2(LOOKAHEADSIZE) + 1)
 #define DICTBITS floor(log2(DICTSIZE) + 1)
+using namespace std::chrono;
 
 std::string filebuffer;
 int filesize;
@@ -44,6 +46,7 @@ class Dictionary{
         size_t matchSz = 0;
         size_t dpb = 0; /*Dictionary pointer to begin of Dictionary*/
         size_t dpe = 0; /*Dictionary pointer to end of Dictionary*/
+        size_t hpe=0;/*points to end of hash*/
         void hashDict(); /*creates an unordered_map of the values in the dict to reduce search for the biggest match*/
         void findBestMatch(std::string lookahead);/*This function has to return the Data to the lookahead*/
         std::unordered_map<char, std::vector<int>> hash;
@@ -51,14 +54,13 @@ class Dictionary{
 };
 
 void Dictionary::updateDict(size_t offset){
-    dpe+= offset;
+    dpe += offset;
     if(dpe-dpb > DICTSIZE){
         dpb += offset;
     }
-    dictionary.clear();
-    for (int i = dpb; i < dpe; i++)
-    {
-        dictionary += filebuffer[i];
+    dictionary = filebuffer.substr(dpb, dpe - dpb);
+    if(dpe > hpe){
+        hashDict();
     }
 }
 class Lookahead{
@@ -82,10 +84,7 @@ void Lookahead::updateLook(size_t offset)
     if(lpe > filesize){
         lpe = filesize;
     }
-    lookahead.clear();
-    for(int i = lpb; i<lpe; i++){
-        lookahead += filebuffer[i];
-    }
+    lookahead = filebuffer.substr(lpb, lpe-lpb);
 }
 
 Lookahead::Lookahead(int filesize){
@@ -118,11 +117,19 @@ Dictionary::Dictionary(){
 
 void Dictionary::hashDict()
 {
+    
+
     hash.clear();
-    for (int i = 0; i < dictionary.size(); i++)
-    {
-        hash[dictionary[i]].push_back(i);
+    hpe += DICTSIZE;
+    if(hpe > filesize){
+        hpe=filesize;
     }
+    int i = dpb;
+    while(i<hpe){
+        hash[filebuffer[i]].push_back(i);
+        i++;
+    }
+    
 }
 
 void Dictionary::findBestMatch(std::string lookahead)
@@ -131,7 +138,13 @@ void Dictionary::findBestMatch(std::string lookahead)
     char a = lookahead[0];
     std::string strMatch;
     std::vector<int> positions;
-    int i;
+    int i, inRange;
+    inRange = 0; /*flag to get if the position is in the range of the dictionary*/
+    matchSz = 1;
+    if(lookahead.size()==1){
+        triplas.emplace_back(0, "", a);
+        return;
+    }
     try{
         positions = hash.at(a);/* initial position to search*/
     }catch(const std::out_of_range& e){
@@ -140,19 +153,43 @@ void Dictionary::findBestMatch(std::string lookahead)
         return;
     }
 
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
+    if(positions.size()>=dictionary.size()/2){
+        /*O problema de tempo se deve ao fato de ter muitos elementos repetidos na hash*/
+        return;
+    }
     for(auto &pos : positions){
-        strMatch.clear();
-        i=0;
-        while (dictionary[(pos + i) % dictionary.size()] == lookahead[i] and i < lookahead.size() - 1) /*we can only go as far as the penultimate position*/
+        if(pos>=dpb and pos < dpe)
         {
-            strMatch += (lookahead[i]);
-            i++;
+
+            inRange = 1;
+            strMatch.clear();
+            i = 0;
+            while (dictionary[(pos + i) % dictionary.size()] == lookahead[i] and i < lookahead.size() - 1) /*we can only go as far as the penultimate position*/
+            {
+                strMatch += (lookahead[i]);
+                i++;
+            }
+            found.push_back({dpe-pos, strMatch, lookahead[i]}); /* lookahead[i] is now the next char*/
+            
         }
-        found.push_back({dictionary.size()- pos, strMatch, lookahead[i]}); /* lookahead[i] is now the next char*/
-        
+        if(strMatch.size()==lookahead.size()-1){
+            break;
+        }
     }
 
-    std::reverse(found.begin(), found.end());
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(t2 - t1).count();
+    std::cout << "duration: " << duration << std::endl;
+
+    if(inRange == 0){
+        /*Caso não tenha a letra no hash retorna 0,"",letra*/
+        triplas.emplace_back(0, "", a);
+        return;
+    }
+
+    std::reverse(found.begin(), found.end()); /*A demora ta aqui*/
+
     int index = 0;
     size_t max = 0;
     Data d(0,"",0);
@@ -165,6 +202,7 @@ void Dictionary::findBestMatch(std::string lookahead)
         }
         index++;
     }
+
     triplas.emplace_back(d);
     matchSz = d.match.size()+1;
     return;
@@ -185,44 +223,59 @@ unsigned long long getFileSize(std::ifstream &fileIn)
 
 void CompressFile(std::ifstream &file)
 {
-    int filesize = getFileSize(file);
+    filesize = getFileSize(file);
     filebuffer = readFileToBuffer(file);
     Lookahead *look = new Lookahead(filesize);
     Dictionary *dict = new Dictionary();
     std::string bitString;
     while (!look->lookahead.empty())
     {
+        high_resolution_clock::time_point t1 = high_resolution_clock::now();
         dict->findBestMatch(look->lookahead);
         look->updateLook(dict->matchSz);
         dict->updateDict(dict->matchSz);
+        high_resolution_clock::time_point t2 = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(t2 - t1).count();
+        // std::cout << "duration: " << duration << std::endl;
+
     }
 
-    for(int i = 0; i< dict->triplas.size(); i++){
-        if(4 + dict->triplas[i].match.size() * 8 < (1+DICTBITS+LOOKBITS+8)){
-            bitString += "0"; /*flag that indicates no compression made*/
-            bitString.append(std::bitset<3>(dict->triplas[i].match.size()).to_string());
-            for (int j = 0; j < dict->triplas[i].match.size(); j++){
-                bitString.append(std::bitset<8>(dict->triplas[i].match[j]).to_string());
+    // for (int i = 0; i < dict->triplas.size(); i++)
+    // {
+    //     std::cout << dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " "<< dict->triplas[i].nextChar<<std::endl;
+    // }
+
+        for (int i = 0; i < dict->triplas.size(); i++)
+        {
+            if (4 + dict->triplas[i].match.size() * 8 < (1 + DICTBITS + LOOKBITS + 8))
+            {
+                bitString += "0"; /*flag that indicates no compression made*/
+                bitString.append(std::bitset<3>(dict->triplas[i].match.size()).to_string());
+                for (int j = 0; j < dict->triplas[i].match.size(); j++)
+                {
+                    bitString.append(std::bitset<8>(dict->triplas[i].match[j]).to_string());
+                }
             }
-        }else{
-            bitString += "1";
-            bitString.append(std::bitset<15>(dict->triplas[i].offset).to_string());
-            bitString.append(std::bitset<9>(dict->triplas[i].match.size()).to_string());
-            bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
+            else
+            {
+                bitString += "1";
+                bitString.append(std::bitset<14>(dict->triplas[i].offset).to_string());
+                bitString.append(std::bitset<8>(dict->triplas[i].match.size()).to_string());
+                bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
+            }
         }
-    }
-    while (bitString.size() % 8 != 0)
-    {
-        bitString += "0";
-    }
-    std::cout<<bitString;
-    delete look;
-    delete dict;
+        while (bitString.size() % 8 != 0)
+        {
+            bitString += "0";
+        }
+        std::cout<<bitString.size()/8;
+        delete look;
+        delete dict;
 }
 
 
 int main(){
-    std::ifstream file("teste.txt", std::ios::in | std::ios::binary | std::ios::ate);
+    std::ifstream file("bee.bmp", std::ios::in | std::ios::binary | std::ios::ate);
     CompressFile(file);
 
     return 0;
