@@ -121,10 +121,11 @@ Dictionary::Dictionary(){
 };
 
 void Dictionary::hashDict()
-{   
+{
+
     SuffixArray.clear();
     for(size_t i = dpb; i< dpe; i++){
-        SuffixArray.push_back({filebuffer.substr(i, dictionary.size()-1-i), i});
+        SuffixArray.push_back({filebuffer.substr(i, dictionary.size()- i), i});
     }
     std::sort(SuffixArray.begin(), SuffixArray.end(), [](const Suffix &x, const Suffix &y) { return x.suf < y.suf; });
 }
@@ -140,20 +141,41 @@ void Dictionary::findBestMatch(std::string lookahead)
     }
     char a = lookahead[0];
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    int pos=0;
     std::string strMatch0, strMatch1;
-    for(auto& suff: SuffixArray){
-        if (suff.suf[0] == a){
+    int i =0;
+    for(auto& aSuf: SuffixArray){
+        if(aSuf.suf[0]== a){
             break;
         }
-        pos++;
+        i++;
     }
-    if(pos == SuffixArray.size()){
-        /*não encontrou match no suffix array*/
-        triplas.emplace_back(0, "", lookahead[0]);
-        return;
+    int j = 0;
+    while(i<SuffixArray.size()){
+        j= 0;
+        strMatch0.clear();
+        while (SuffixArray[i].suf[j] == lookahead[j] and j< lookahead.size()-1){
+            strMatch0 += lookahead[j];
+            j++;
+        }
+        while (dictionary[(SuffixArray[i].pos - dpb + j) % dictionary.size()] == lookahead[j] and j < lookahead.size() - 1) /*we can only go as far as the penultimate position*/
+        {
+            strMatch0 += lookahead[j];
+            j++;
+        }
+        if(strMatch1.size()> strMatch0.size()){
+            matchSz = strMatch1.size() + 1;
+            triplas.emplace_back(dpe-SuffixArray[i-1].pos, strMatch1, lookahead[matchSz]);
+            return;
+        }
+        strMatch1 = strMatch0;
+        if(SuffixArray[i].suf[0]!=lookahead[0]){
+            break;
+        }
+        i++;
     }
 
+    matchSz = strMatch1.size() + 1;
+    triplas.emplace_back(dpe - SuffixArray[i - 1].pos, strMatch1, lookahead[matchSz]);
     // std::cout<<pos;
     // std::cout<<"DICT :"<<dictionary<< "LOOK: "<<lookahead<<std::endl;
     // std::cout<< strMatch1<<"\n\n";
