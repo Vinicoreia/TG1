@@ -122,11 +122,14 @@ Dictionary::Dictionary(){
 
 void Dictionary::hashDict()
 {
-
     SuffixArray.clear();
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
     for(size_t i = dpb; i< dpe; i++){
         SuffixArray.push_back({filebuffer.substr(i, dictionary.size()- i), i});
     }
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(t2 - t1).count();
+    std::cout << "duration: " << duration << std::endl;
     std::sort(SuffixArray.begin(), SuffixArray.end(), [](const Suffix &x, const Suffix &y) { return x.suf < y.suf; });
 }
 
@@ -134,7 +137,6 @@ void Dictionary::findBestMatch(std::string lookahead)
 {
     matchSz = 1;
     char a = lookahead[0];
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
     std::string strMatch0, strMatch1;
     int i =0;
     int j=0;
@@ -173,9 +175,6 @@ void Dictionary::findBestMatch(std::string lookahead)
     // std::cout<<pos;
     // std::cout<<"DICT :"<<dictionary<< "LOOK: "<<lookahead<<std::endl;
     // std::cout<< strMatch1<<"\n\n";
-    high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(t2 - t1).count();
-    std::cout << "duration: " << duration << std::endl;
 
     return;
 }
