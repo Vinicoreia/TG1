@@ -66,7 +66,7 @@ void Dictionary::updateDict(size_t offset){
         dpb += offset;
     }
     dictionary = filebuffer.substr(dpb, dpe - dpb);
-        hashDict();
+    hashDict();
 }
 class Lookahead{
     
@@ -132,50 +132,44 @@ void Dictionary::hashDict()
 
 void Dictionary::findBestMatch(std::string lookahead)
 {
-    matchSz = 1; /*minimum match size is 3*/
-    if (lookahead.size() <= 3)
-    {
-        matchSz +=lookahead.size()-1 ;
-        triplas.emplace_back(0, lookahead, lookahead[0]);
-        return;
-    }
+    matchSz = 1;
     char a = lookahead[0];
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     std::string strMatch0, strMatch1;
     int i =0;
+    int j=0;
     for(auto& aSuf: SuffixArray){
         if(aSuf.suf[0]== a){
             break;
         }
         i++;
     }
-    int j = 0;
+    /*se i == SUffixArray.size() então não achou no array de suffixos*/
+    if(i==SuffixArray.size()){
+        triplas.emplace_back(0,"", lookahead[0]);
+        return;
+    }
+
     while(i<SuffixArray.size()){
-        j= 0;
-        strMatch0.clear();
-        while (SuffixArray[i].suf[j] == lookahead[j] and j< lookahead.size()-1){
-            strMatch0 += lookahead[j];
-            j++;
-        }
-        while (dictionary[(SuffixArray[i].pos - dpb + j) % dictionary.size()] == lookahead[j] and j < lookahead.size() - 1) /*we can only go as far as the penultimate position*/
-        {
-            strMatch0 += lookahead[j];
-            j++;
-        }
-        if(strMatch1.size()> strMatch0.size()){
-            matchSz = strMatch1.size() + 1;
-            triplas.emplace_back(dpe-SuffixArray[i-1].pos, strMatch1, lookahead[matchSz]);
-            return;
-        }
-        strMatch1 = strMatch0;
-        if(SuffixArray[i].suf[0]!=lookahead[0]){
+        j=0;
+        if(SuffixArray[i].suf[0]!= lookahead[0]){
             break;
         }
+        strMatch0.clear();
+        while(dictionary[((SuffixArray[i].pos-dpb+j)%dictionary.size())] == lookahead[j] and j< lookahead.size()-1){
+            strMatch0 += lookahead[j];
+            j++;
+        }
+        if(strMatch1 > strMatch0){
+            break;
+        }
+        strMatch1= strMatch0;
         i++;
     }
 
     matchSz = strMatch1.size() + 1;
-    triplas.emplace_back(dpe - SuffixArray[i - 1].pos, strMatch1, lookahead[matchSz]);
+    triplas.emplace_back(dpe-SuffixArray[i-1].pos, strMatch1, lookahead[matchSz-1]);
+
     // std::cout<<pos;
     // std::cout<<"DICT :"<<dictionary<< "LOOK: "<<lookahead<<std::endl;
     // std::cout<< strMatch1<<"\n\n";
@@ -251,7 +245,7 @@ void CompressFile(std::ifstream &file)
 
 
 int main(){
-    std::ifstream file("teste.txt", std::ios::in | std::ios::binary | std::ios::ate);
+    std::ifstream file("bee.bmp", std::ios::in | std::ios::binary | std::ios::ate);
     CompressFile(file);
 
     return 0;
