@@ -159,8 +159,6 @@ void Dictionary::findBestMatch(std::string lookahead)
     catch (const std::out_of_range &e){
         triplas.emplace_back(0, srchash, srchash[0]);
     }
-
-    int j=0;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     for(auto &pos : positions){
         if (pos >= dpb and pos < dpe)
@@ -181,9 +179,6 @@ void Dictionary::findBestMatch(std::string lookahead)
                 break;
             }
         }
-    }
-    if(strMatch1.size()==0 and strMatch0.size() == 0){
-        found = {0, lookahead.substr(0, 3), '#'};
     }
 
     triplas.emplace_back(found);
