@@ -49,7 +49,7 @@ class Dictionary{
         size_t hpe=0;/*points to end of hash*/
         void hashDict(); /*creates an unordered_map of the values in the dict to reduce search for the biggest match*/
         void findBestMatch(std::string lookahead);/*This function has to return the Data to the lookahead*/
-        std::unordered_map<char, std::vector<int>> hash;
+        std::unordered_map<std::string, std::vector<int>> hash;
         std::deque<Data> triplas;
 };
 
@@ -111,100 +111,87 @@ Lookahead::Lookahead(int filesize){
 Dictionary::Dictionary(){
     dpe += 1;
     dictionary.append(getChars(0, 1, filebuffer));
-    triplas.emplace_back(0, "", filebuffer[0]);
+    triplas.emplace_back(0, filebuffer.substr(0,1), filebuffer[0]);
     hashDict();
 };
 
 void Dictionary::hashDict()
 {
-    
+    /*This is a 3 chars hash*/
 
     hash.clear();
-    hpe += DICTSIZE;
+    std::string cycle;
+    cycle.clear();
+    hpe += DICTSIZE*3;
     if(hpe > filesize){
         hpe=filesize;
     }
     int i = dpb;
-    while(i<hpe){
-        hash[filebuffer[i]].push_back(i);
+    while(i<hpe-3){
+        hash[filebuffer.substr(i, 3)].push_back(i);
         i++;
     }
-    
+        cycle += filebuffer[dpe-2] + filebuffer[dpe-1] + filebuffer[dpb];
+        hash[cycle].push_back(dpe-2);
+        cycle += filebuffer[dpe - 1] + filebuffer[dpb] + filebuffer[dpb+1];
+        hash[cycle].push_back(dpe-1);
 }
 
 void Dictionary::findBestMatch(std::string lookahead)
 {
-    std::vector<Data> found;
-    char a = lookahead[0];
-    std::string strMatch;
+    matchSz = 3; /*minimum match size is 3*/
+    if (lookahead.size() <= 3)
+    {
+        triplas.emplace_back(0, lookahead, lookahead[0]);
+        return;
+    }
+    
     std::vector<int> positions;
-    int i, inRange;
-    inRange = 0; /*flag to get if the position is in the range of the dictionary*/
-    matchSz = 1;
-    if(lookahead.size()==1){
-        triplas.emplace_back(0, "", a);
-        return;
-    }
+    std::string srchash;
+    std::string strMatch0, strMatch1;
+    Data found = {0, lookahead.substr(0, 3), '#'};
+    srchash = lookahead.substr(0, 3);
+    int i = 0;
+
     try{
-        positions = hash.at(a);/* initial position to search*/
-    }catch(const std::out_of_range& e){
-        /*Caso não tenha a letra no hash retorna 0,"",letra*/
-        triplas.emplace_back(0, "", a);
-        return;
+        positions = hash.at(srchash);
+    }
+    catch (const std::out_of_range &e){
+        triplas.emplace_back(0, srchash, srchash[0]);
     }
 
+    int j=0;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    if(positions.size()>=dictionary.size()/2){
-        /*O problema de tempo se deve ao fato de ter muitos elementos repetidos na hash*/
-        return;
-    }
     for(auto &pos : positions){
-        if(pos>=dpb and pos < dpe)
+        if (pos >= dpb and pos < dpe)
         {
-
-            inRange = 1;
-            strMatch.clear();
-            i = 0;
+            strMatch0=srchash;
+            i = 3;
             while (dictionary[(pos + i) % dictionary.size()] == lookahead[i] and i < lookahead.size() - 1) /*we can only go as far as the penultimate position*/
             {
-                strMatch += (lookahead[i]);
+                strMatch0 += (lookahead[i]);
                 i++;
             }
-            found.push_back({dpe-pos, strMatch, lookahead[i]}); /* lookahead[i] is now the next char*/
-            
-        }
-        if(strMatch.size()==lookahead.size()-1){
-            break;
+            if(strMatch0.size()>strMatch1.size()){
+                found = {dpe - pos, strMatch0, lookahead[i]}; /* lookahead[i] is now the next char*/
+            }
+            strMatch1 = strMatch0;
+            if (strMatch1.size() == lookahead.size() - 1 and lookahead.size()>1)
+            {
+                break;
+            }
         }
     }
+    if(strMatch1.size()==0 and strMatch0.size() == 0){
+        found = {0, lookahead.substr(0, 3), '#'};
+    }
 
+    triplas.emplace_back(found);
+    matchSz = found.match.size() + 1;
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(t2 - t1).count();
-    std::cout << "duration: " << duration << std::endl;
+    // std::cout << "duration: " << duration << std::endl;
 
-    if(inRange == 0){
-        /*Caso não tenha a letra no hash retorna 0,"",letra*/
-        triplas.emplace_back(0, "", a);
-        return;
-    }
-
-    std::reverse(found.begin(), found.end()); /*A demora ta aqui*/
-
-    int index = 0;
-    size_t max = 0;
-    Data d(0,"",0);
-    for (auto vec : found)
-    {
-        if (vec.match.length() > max)
-        {
-            d = vec;
-            max = vec.match.length();
-        }
-        index++;
-    }
-
-    triplas.emplace_back(d);
-    matchSz = d.match.size()+1;
     return;
 }
 
@@ -240,17 +227,16 @@ void CompressFile(std::ifstream &file)
 
     }
 
-    // for (int i = 0; i < dict->triplas.size(); i++)
-    // {
-    //     std::cout << dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " "<< dict->triplas[i].nextChar<<std::endl;
-    // }
+    for (int i = 0; i < dict->triplas.size(); i++)
+    {
+        std::cout << dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " "<< dict->triplas[i].nextChar<<std::endl;
+    }
 
         for (int i = 0; i < dict->triplas.size(); i++)
         {
-            if (4 + dict->triplas[i].match.size() * 8 < (1 + DICTBITS + LOOKBITS + 8))
+            if (dict->triplas[i].offset == 0)
             {
                 bitString += "0"; /*flag that indicates no compression made*/
-                bitString.append(std::bitset<3>(dict->triplas[i].match.size()).to_string());
                 for (int j = 0; j < dict->triplas[i].match.size(); j++)
                 {
                     bitString.append(std::bitset<8>(dict->triplas[i].match[j]).to_string());
