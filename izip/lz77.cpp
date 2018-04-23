@@ -25,7 +25,7 @@ int filesize;
 
 #define REP(i, n) for (int i = 0; i < (int)(n); ++i)
 
-const int MAXN = 1 << 21;
+const int MAXN = 1<<21;
 std::string S;
 int N, gap;
 int sa[MAXN], pos[MAXN], tmp[MAXN], lcp[MAXN];
@@ -182,6 +182,7 @@ void Dictionary::findBestMatch(std::string lookahead)
     std::string strMatch0, strMatch1;
     int i =0;
     int j=0;
+    int pos = 0;
     int flag0 = 0;
     /*Pegar indice do primeiro valor que tem lookahead[0]*/
     /*se i == SUffixArray.size() então não achou no array de suffixos*/
@@ -205,7 +206,8 @@ void Dictionary::findBestMatch(std::string lookahead)
     while(filebuffer[sa[i]]==a){
         if(hpb+sa[i] >= dpb and hpb+sa[i] < dpe){
             strMatch0.clear();
-            j=0;
+            
+            j = 0;
             while(dictionary[(sa[i]+j)%dictionary.size()] == lookahead[j] and j<lookahead.size()-1){
                 strMatch0 += lookahead[j];
                 j++;
@@ -214,6 +216,7 @@ void Dictionary::findBestMatch(std::string lookahead)
             {
                 break;
             }
+            pos = i;
             strMatch1 = strMatch0;
         }
         i++;
@@ -226,7 +229,8 @@ void Dictionary::findBestMatch(std::string lookahead)
         /*retorna tripla vazia*/
     }
     matchSz = strMatch1.size() + 1;
-    triplas.emplace_back(dpe-(hpb+sa[i])-2, strMatch1, lookahead[matchSz - 1]);
+    // std::cout<<dpb<<" "<<dpe<<" "<<hpb<<" "<<hpe<<" "<<sa[pos]<<" "<< i<<std::endl;
+    triplas.emplace_back(dpe-(hpb+sa[pos]), strMatch1, lookahead[matchSz - 1]);
 
     return;
 }
@@ -259,27 +263,33 @@ void CompressFile(std::ifstream &file)
         dict->updateDict(dict->matchSz);
         high_resolution_clock::time_point t2 = high_resolution_clock::now();
         auto duration = duration_cast<microseconds>(t2 - t1).count();
-        // std::cout << "duration: " << duration << std::endl;
-
+        // std::cout<<duration<<std::endl;
     }
-    for (int i = 0; i < dict->triplas.size(); i++)
-    {
-        std::cout <<"TRIPLA: "<< dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " "<< dict->triplas[i].nextChar<<std::endl;
-    }
-
+    // for (int i = 0; i < dict->triplas.size(); i++)
+    // {
+    //     std::cout <<"TRIPLA: "<< dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " "<< dict->triplas[i].nextChar<<std::endl;
+    // }
+        bitString.clear();
+        std::cout<<dict->triplas.size();
+        exit(1);
         for (int i = 0; i < dict->triplas.size(); i++)
         {
-            if (dict->triplas[i].offset == 0)
-            {
-                bitString += "0"; /*flag that indicates no compression made*/
-                for (int j = 0; j < dict->triplas[i].match.size(); j++)
+            if(dict->triplas[i].offset == 0){
+                /*nao teve match adiciona flag 0 e o nextchar*/
+                bitString+= "0";
+                bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
+            }else if((dict->triplas[i].match.size()*9 + 8) < (1+DICTBITS+LOOKBITS)){
+                /*representar a match com DICTSIZE+DICTBITS nao vale a pena*/
+                for (int j = 0; j < dict->triplas[i].match.size(); i++)
                 {
+
+                    bitString += "0"; /*FLAG*/
                     bitString.append(std::bitset<8>(dict->triplas[i].match[j]).to_string());
                 }
-            }
-            else
-            {
-                bitString += "1";
+                bitString += "0"; /*FLAG*/
+                bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
+            }else{
+                bitString += "1"; /*FLAG*/
                 bitString.append(std::bitset<DICTBITS>(dict->triplas[i].offset).to_string());
                 bitString.append(std::bitset<LOOKBITS>(dict->triplas[i].match.size()).to_string());
                 bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
@@ -290,13 +300,23 @@ void CompressFile(std::ifstream &file)
             bitString += "0";
         }
         std::cout<<bitString.size()/8;
+        // std::ofstream output("c.bin", std::ios::out | std::ios::binary);
+        // unsigned long c;
+        // while (!bitString.empty())
+        // {
+        //     std::bitset<8> b(bitString);
+        //     c = b.to_ulong();
+        //     output.write(reinterpret_cast<const char *>(&c), 1);
+        //     bitString.erase(0, 8);
+        // }
+        // output.close();
         delete look;
         delete dict;
 }
 
 
 int main(){
-    std::ifstream file("teste.txt", std::ios::in | std::ios::binary | std::ios::ate);
+    std::ifstream file("Cardbau.png", std::ios::in | std::ios::binary | std::ios::ate);
     CompressFile(file);
 
     return 0;
