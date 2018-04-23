@@ -11,12 +11,12 @@
 #include <chrono>
 #include <algorithm>
 #include <unistd.h>
-#define DICTSIZE 4
-#define LOOKAHEADSIZE 3
+#define DICTSIZE 32767
+#define LOOKAHEADSIZE 255
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
 
-#define DICTBITS 3
-#define LOOKBITS 2
+#define DICTBITS 15
+#define LOOKBITS 8
 using namespace std::chrono;
 
 std::string filebuffer;
@@ -25,7 +25,7 @@ int filesize;
 
 #define REP(i, n) for (int i = 0; i < (int)(n); ++i)
 
-const int MAXN = 2*DICTSIZE;
+const int MAXN = 3*DICTSIZE;
 std::string S;
 int N, gap;
 int sa[MAXN], pos[MAXN], tmp[MAXN], lcp[MAXN];
@@ -204,11 +204,10 @@ void Dictionary::findBestMatch(std::string lookahead)
     
     /* Achei um indice*/
     while(filebuffer[sa[i]]==a){
-        if(hpb+sa[i] >= dpb and hpb+sa[i] < dpe){
+        if(hpb + sa[i] >= dpb and hpb + sa[i] < dpe){
             strMatch0.clear();
-            
             j = 0;
-            while(dictionary[(sa[i]+j)%dictionary.size()] == lookahead[j] and j<lookahead.size()-1){
+            while(dictionary[(hpb-dpb+sa[i]+j)%dictionary.size()] == lookahead[j] and j<lookahead.size()-1){
                 strMatch0 += lookahead[j];
                 j++;
             }
@@ -257,7 +256,7 @@ void CompressFile(std::ifstream &file)
     while (!look->lookahead.empty())
     {
         high_resolution_clock::time_point t1 = high_resolution_clock::now();
-        std::cout << "DICT " << dict->dictionary << " LOOK" << look->lookahead << std::endl;
+        // std::cout << "DICT " << dict->dictionary << " LOOK" << look->lookahead << std::endl;
         dict->findBestMatch(look->lookahead);
         look->updateLook(dict->matchSz);
         dict->updateDict(dict->matchSz);
@@ -265,12 +264,11 @@ void CompressFile(std::ifstream &file)
         auto duration = duration_cast<microseconds>(t2 - t1).count();
         // std::cout<<duration<<std::endl;
     }
-    for (int i = 0; i < dict->triplas.size(); i++)
-    {
-        std::cout <<"TRIPLA: "<< dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " "<< dict->triplas[i].nextChar<<std::endl;
-    }
+    // for (int i = 0; i < dict->triplas.size(); i++)
+    // {
+    //     std::cout <<"TRIPLA: "<< dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " "<< dict->triplas[i].nextChar<<std::endl;
+    // }
         bitString.clear();
-        std::cout<<dict->triplas.size()<<std::endl;
         for (int i = 0; i < dict->triplas.size(); i++)
         {
             if(dict->triplas[i].offset == 0){
@@ -315,7 +313,7 @@ void CompressFile(std::ifstream &file)
 
 
 int main(){
-    std::ifstream file("teste.txt", std::ios::in | std::ios::binary | std::ios::ate);
+    std::ifstream file("bee.bmp", std::ios::in | std::ios::binary | std::ios::ate);
     CompressFile(file);
 
     return 0;
