@@ -205,8 +205,8 @@ void Dictionary::findBestMatch(std::string lookahead)
     /* Achei um indice*/
     std::cout<<std::endl;
     while(filebuffer[sa[i]]==a){
-        std::cout<<"I"<<sa[i]<<" "<<lookahead[0]<<" ";
         if(hpb+sa[i] >= dpb and hpb+sa[i] < dpe){
+            std::cout<<"I"<<sa[i]<<" LOOK "<<lookahead<<" DICT "<<dictionary;
             strMatch0.clear();
             
             j = 0;
@@ -232,6 +232,7 @@ void Dictionary::findBestMatch(std::string lookahead)
         /*retorna tripla vazia*/
     }
     matchSz = strMatch1.size() + 1;
+    std::cout<<"match"<<strMatch1;
     triplas.emplace_back(dpe-(hpb+sa[pos]), strMatch1, lookahead[matchSz - 1]);
 
     return;
