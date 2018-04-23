@@ -104,8 +104,8 @@ class Dictionary{
 
 void Dictionary::updateDict(size_t offset){
     dpe += offset;
-    if(dpe-dpb > DICTSIZE){
-        dpb += offset;
+    if(dpe-dpb >= DICTSIZE){
+        dpb = dpe-DICTSIZE;
     }
     dictionary = filebuffer.substr(dpb, dpe - dpb);
     if(dpe >= hpe and dpe<filesize){
@@ -134,7 +134,7 @@ void Lookahead::updateLook(size_t offset)
     if(lpe > filesize){
         lpe = filesize;
     }
-    lookahead = filebuffer.substr(lpb, lpe-lpb);
+    lookahead = filebuffer.substr(lpb, lpe-lpb+1);
 }
 
 Lookahead::Lookahead(int filesize){
@@ -203,10 +203,8 @@ void Dictionary::findBestMatch(std::string lookahead)
 
     
     /* Achei um indice*/
-    std::cout<<std::endl;
     while(filebuffer[sa[i]]==a){
         if(hpb+sa[i] >= dpb and hpb+sa[i] < dpe){
-            std::cout<<"I"<<sa[i]<<" LOOK "<<lookahead<<" DICT "<<dictionary;
             strMatch0.clear();
             
             j = 0;
@@ -214,7 +212,6 @@ void Dictionary::findBestMatch(std::string lookahead)
                 strMatch0 += lookahead[j];
                 j++;
             }
-            std::cout<<strMatch0<<" ";
             if (strMatch1 > strMatch0)
             {
                 break;
@@ -232,7 +229,6 @@ void Dictionary::findBestMatch(std::string lookahead)
         /*retorna tripla vazia*/
     }
     matchSz = strMatch1.size() + 1;
-    std::cout<<"match"<<strMatch1;
     triplas.emplace_back(dpe-(hpb+sa[pos]), strMatch1, lookahead[matchSz - 1]);
 
     return;
@@ -261,7 +257,7 @@ void CompressFile(std::ifstream &file)
     while (!look->lookahead.empty())
     {
         high_resolution_clock::time_point t1 = high_resolution_clock::now();
-        std::cout << "DICT " << dict->dictionary << "LOOK" << look->lookahead << std::endl;
+        std::cout << "DICT " << dict->dictionary << " LOOK" << look->lookahead << std::endl;
         dict->findBestMatch(look->lookahead);
         look->updateLook(dict->matchSz);
         dict->updateDict(dict->matchSz);
