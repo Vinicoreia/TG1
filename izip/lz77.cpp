@@ -25,7 +25,7 @@ int filesize;
 
 #define REP(i, n) for (int i = 0; i < (int)(n); ++i)
 
-const int MAXN = 8;
+const int MAXN = 1 << 21;
 std::string S;
 int N, gap;
 int sa[MAXN], pos[MAXN], tmp[MAXN], lcp[MAXN];
@@ -108,10 +108,9 @@ void Dictionary::updateDict(size_t offset){
         dpb += offset;
     }
     dictionary = filebuffer.substr(dpb, dpe - dpb);
-    if(dpe >= hpe){
-        hashDict();
+    if(dpe >= hpe and dpe<filesize){
         hpb = hpe;
-        hpe += MAXN;
+        hashDict();
     }
 }
 class Lookahead{
@@ -172,15 +171,8 @@ void Dictionary::hashDict()
         hpe = filesize;
     }
     S = filebuffer.substr(hpb, hpe-hpb);
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
     buildSA();
     // buildLCP();
-    
-    high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(t2 - t1).count();
-    std::cout << "duration: " << duration << std::endl;
-    std::cout << std::endl;
-
 }
 
 void Dictionary::findBestMatch(std::string lookahead)
@@ -200,7 +192,9 @@ void Dictionary::findBestMatch(std::string lookahead)
         }
         i++;
     }
+
     if(i>=MAXN){
+
         triplas.emplace_back(0, "", lookahead[0]);
         return;
         /*retorna tripla vazia*/
@@ -227,17 +221,12 @@ void Dictionary::findBestMatch(std::string lookahead)
 
     if (strMatch1.size() ==0)
     {
-        // std::cout << "DICT :" << dictionary << "LOOK: " << lookahead << std::endl;
-        // std::cout << "M " << strMatch1 << "\n\n";
         triplas.emplace_back(0, "", lookahead[0]);
         return;
         /*retorna tripla vazia*/
     }
     matchSz = strMatch1.size() + 1;
     triplas.emplace_back(dpe-(hpb+sa[i])-2, strMatch1, lookahead[matchSz - 1]);
-    // std::cout<<"i"<< i <<std::endl;
-    // std::cout<<"DICT :"<<dictionary<< "LOOK: "<<lookahead<<std::endl;
-    // std::cout<<"M "<< strMatch1<<"\n\n";
 
     return;
 }
