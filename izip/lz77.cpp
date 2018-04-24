@@ -26,7 +26,7 @@ int filesize;
 
 #define REP(i, n) for (int i = 0; i < (int)(n); ++i)
 
-const int MAXN = DICTSIZE*2;
+const int MAXN = WINDOWSIZE*3;
 std::string S;
 int N, gap;
 int sa[MAXN], pos[MAXN], tmp[MAXN], lcp[MAXN];
@@ -173,7 +173,7 @@ void Dictionary::hashDict()
     }
     S = filebuffer.substr(hpb, hpe-hpb);
     buildSA();
-    // buildLCP();
+    buildLCP();
 }
 
 void Dictionary::findBestMatch(std::string lookahead)
@@ -195,7 +195,7 @@ void Dictionary::findBestMatch(std::string lookahead)
         i++;
     }
 
-    if(i>=MAXN){
+    if(i==MAXN){
 
         triplas.emplace_back(0, "", lookahead[0]);
         return;
@@ -264,15 +264,15 @@ void CompressFile(std::ifstream &file)
         dict->findBestMatch(look->lookahead);
         high_resolution_clock::time_point t2 = high_resolution_clock::now();
         auto duration = duration_cast<microseconds>(t2 - t1).count();
-        std::cout<<duration<<std::endl;
+        // std::cout<<duration<<std::endl;
         look->updateLook(dict->matchSz);
         dict->updateDict(dict->matchSz);
     }
     std::cout<<dict->triplas.size()<<std::endl;
-    // for (int i = 0; i < dict->triplas.size(); i++)
-    // {
-    //     std::cout <<"TRIPLA: "<< dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " "<< dict->triplas[i].nextChar<<std::endl;
-    // }
+    for (int i = 0; i < dict->triplas.size(); i++)
+    {
+        std::cout <<"TRIPLA: "<< dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " "<< dict->triplas[i].nextChar<<std::endl;
+    }
         for (int i = 0; i < dict->triplas.size(); i++)
         {
             if(dict->triplas[i].offset == 0){
@@ -316,7 +316,7 @@ void CompressFile(std::ifstream &file)
 
 
 int main(){
-    std::ifstream file("teste.txt", std::ios::in | std::ios::binary | std::ios::ate);
+    std::ifstream file("teste.cpp", std::ios::in | std::ios::binary | std::ios::ate);
     CompressFile(file);
 
     return 0;
