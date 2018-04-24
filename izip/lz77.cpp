@@ -11,12 +11,12 @@
 #include <chrono>
 #include <algorithm>
 #include <unistd.h>
-#define DICTSIZE 32767
-#define LOOKAHEADSIZE 511
+#define DICTSIZE 4
+#define LOOKAHEADSIZE 3
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
 
-#define DICTBITS 15
-#define LOOKBITS 9
+#define DICTBITS 3
+#define LOOKBITS 2
 #define FACTOR 3
 using namespace std::chrono;
 
@@ -26,7 +26,7 @@ int filesize;
 
 #define REP(i, n) for (int i = 0; i < (int)(n); ++i)
 
-const int MAXN = 1<<21;
+const int MAXN = DICTSIZE*2;
 std::string S;
 int N, gap;
 int sa[MAXN], pos[MAXN], tmp[MAXN], lcp[MAXN];
@@ -167,7 +167,7 @@ Dictionary::Dictionary(){
 };
 void Dictionary::hashDict()
 {   hpb = dpb;
-    hpe = dpe+MAXN;
+    hpe = dpb+MAXN;
     if(hpe > filesize){
         hpe = filesize;
     }
@@ -259,12 +259,12 @@ void CompressFile(std::ifstream &file)
     std::string bitString;
     while (!look->lookahead.empty())
     {
-        // high_resolution_clock::time_point t1 = high_resolution_clock::now();
+        high_resolution_clock::time_point t1 = high_resolution_clock::now();
         // std::cout << "DICT " << dict->dictionary << " LOOK" << look->lookahead << std::endl;
         dict->findBestMatch(look->lookahead);
-        // high_resolution_clock::time_point t2 = high_resolution_clock::now();
-        // auto duration = duration_cast<microseconds>(t2 - t1).count();
-        // std::cout<<duration<<std::endl;
+        high_resolution_clock::time_point t2 = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(t2 - t1).count();
+        std::cout<<duration<<std::endl;
         look->updateLook(dict->matchSz);
         dict->updateDict(dict->matchSz);
     }
@@ -316,7 +316,7 @@ void CompressFile(std::ifstream &file)
 
 
 int main(){
-    std::ifstream file("bee.bmp", std::ios::in | std::ios::binary | std::ios::ate);
+    std::ifstream file("teste.txt", std::ios::in | std::ios::binary | std::ios::ate);
     CompressFile(file);
 
     return 0;
