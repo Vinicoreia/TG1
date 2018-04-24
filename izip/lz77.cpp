@@ -12,11 +12,11 @@
 #include <algorithm>
 #include <unistd.h>
 #define DICTSIZE 32767
-#define LOOKAHEADSIZE 255
+#define LOOKAHEADSIZE 511
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
 
 #define DICTBITS 15
-#define LOOKBITS 8
+#define LOOKBITS 9
 #define FACTOR 3
 using namespace std::chrono;
 
@@ -167,7 +167,7 @@ Dictionary::Dictionary(){
 };
 void Dictionary::hashDict()
 {   hpb = dpb;
-    hpe = dpe*FACTOR;
+    hpe = dpe+MAXN;
     if(hpe > filesize){
         hpe = filesize;
     }
@@ -217,6 +217,9 @@ void Dictionary::findBestMatch(std::string lookahead)
                 break;
             }
             pos = i;
+            if(j==lookahead.size()-1){
+                break;
+            }
             strMatch1 = strMatch0;
         }
         i++;
@@ -249,20 +252,21 @@ unsigned long long getFileSize(std::ifstream &fileIn)
 void CompressFile(std::ifstream &file)
 {
     filesize = getFileSize(file);
+    std::cout<<filesize<<std::endl;
     filebuffer = readFileToBuffer(file);
     Lookahead *look = new Lookahead(filesize);
     Dictionary *dict = new Dictionary();
     std::string bitString;
     while (!look->lookahead.empty())
     {
-        high_resolution_clock::time_point t1 = high_resolution_clock::now();
+        // high_resolution_clock::time_point t1 = high_resolution_clock::now();
         // std::cout << "DICT " << dict->dictionary << " LOOK" << look->lookahead << std::endl;
         dict->findBestMatch(look->lookahead);
+        // high_resolution_clock::time_point t2 = high_resolution_clock::now();
+        // auto duration = duration_cast<microseconds>(t2 - t1).count();
+        // std::cout<<duration<<std::endl;
         look->updateLook(dict->matchSz);
         dict->updateDict(dict->matchSz);
-        high_resolution_clock::time_point t2 = high_resolution_clock::now();
-        auto duration = duration_cast<microseconds>(t2 - t1).count();
-        // std::cout<<duration<<std::endl;
     }
     std::cout<<dict->triplas.size()<<std::endl;
     // for (int i = 0; i < dict->triplas.size(); i++)
@@ -312,7 +316,7 @@ void CompressFile(std::ifstream &file)
 
 
 int main(){
-    std::ifstream file("teste.cpp", std::ios::in | std::ios::binary | std::ios::ate);
+    std::ifstream file("bee.bmp", std::ios::in | std::ios::binary | std::ios::ate);
     CompressFile(file);
 
     return 0;
