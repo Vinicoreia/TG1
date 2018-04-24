@@ -11,12 +11,12 @@
 #include <chrono>
 #include <algorithm>
 #include <unistd.h>
-#define DICTSIZE 32767
-#define LOOKAHEADSIZE 511
+#define DICTSIZE 255
+#define LOOKAHEADSIZE 255
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
 
-#define DICTBITS 15
-#define LOOKBITS 9
+#define DICTBITS 8
+#define LOOKBITS 8
 #define FACTOR 3
 using namespace std::chrono;
 
@@ -26,7 +26,7 @@ int filesize;
 
 #define REP(i, n) for (int i = 0; i < (int)(n); ++i)
 
-const int MAXN = 1<<21;
+const int MAXN = DICTSIZE*4;
 std::string S;
 int N, gap;
 int sa[MAXN], pos[MAXN], tmp[MAXN], lcp[MAXN];
@@ -167,13 +167,13 @@ Dictionary::Dictionary(){
 };
 void Dictionary::hashDict()
 {   hpb = dpb;
-    hpe = dpe+MAXN;
+    hpe = dpb+MAXN;
     if(hpe > filesize){
         hpe = filesize;
     }
     S = filebuffer.substr(hpb, hpe-hpb);
     buildSA();
-    // buildLCP();
+    buildLCP();
 }
 
 void Dictionary::findBestMatch(std::string lookahead)
@@ -200,14 +200,24 @@ void Dictionary::findBestMatch(std::string lookahead)
         triplas.emplace_back(0, "", lookahead[0]);
         return;
         /*retorna tripla vazia*/
-    }
-
-    
+    }    
     /* Achei um indice*/
+    if(lcp[i]==0){
+        strMatch1.clear();
+        while(dictionary[(hpb-dpb+sa[i]+j)%dictionary.size()] == lookahead[j] and j<lookahead.size()-1){
+                strMatch0 += lookahead[j];
+                j++;
+            }
+        matchSz = strMatch1.size() + 1;        
+        triplas.emplace_back(dpe-(hpb + sa[i]), strMatch1, lookahead[matchSz - 1]);
+        return;            
+    }
+    
     while(S[sa[i]]==a and i < MAXN){
         if(hpb + sa[i] >= dpb and hpb + sa[i] < dpe){
             strMatch0.clear();
             j = 0;
+            pos = i;
             while(dictionary[(hpb-dpb+sa[i]+j)%dictionary.size()] == lookahead[j] and j<lookahead.size()-1){
                 strMatch0 += lookahead[j];
                 j++;
@@ -216,7 +226,6 @@ void Dictionary::findBestMatch(std::string lookahead)
             {
                 break;
             }
-            pos = i;
             strMatch1 = strMatch0;
             if(j==lookahead.size()-1){
                 break;
