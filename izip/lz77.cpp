@@ -12,12 +12,12 @@
 #include <algorithm>
 #include <unistd.h>
 #include "boost/algorithm/searching/boyer_moore.hpp"
-#define DICTSIZE 32767
-#define LOOKAHEADSIZE 255
+#define DICTSIZE 4
+#define LOOKAHEADSIZE 10
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
 
-#define DICTBITS 15
-#define LOOKBITS 9
+#define DICTBITS 3
+#define LOOKBITS 2
 using namespace std::chrono;
 
 std::string filebuffer;
@@ -141,6 +141,13 @@ void Dictionary::findBestMatch(int lpb, int lpe)
                 matchSz = look.size()+1;
                 return;
             }
+        }else{
+            /*ve se tem mais match*/
+            while(dictionary[(dictionary.size()-strlen(&b.first[0])+i)%dictionary.size()]==look[i-1] and i<lpe-lpb){
+                look += filebuffer[lpb + i];
+                i++;
+            }
+            std::cout<<dictionary<<" "<<look<<" "<<i;
         }
         position = strlen(&b.first[0]);
         if(look.size()==lpe-lpb){
@@ -196,10 +203,10 @@ void CompressFile(std::ifstream &file)
 
     }
     std::cout<<dict->triplas.size()<<std::endl;
-    // for (int i = 0; i < dict->triplas.size(); i++)
-    // {
-    //     std::cout <<"TRIPLA: "<< dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " "<< dict->triplas[i].nextChar<<std::endl;
-    // }
+    for (int i = 0; i < dict->triplas.size(); i++)
+    {
+        std::cout <<"TRIPLA: "<< dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " "<< dict->triplas[i].nextChar<<std::endl;
+    }
     
         for (int i = 0; i < dict->triplas.size(); i++)
         {
@@ -244,7 +251,7 @@ void CompressFile(std::ifstream &file)
 
 
 int main(){
-    std::ifstream file("bee.bmp", std::ios::in | std::ios::binary | std::ios::ate);
+    std::ifstream file("teste.txt", std::ios::in | std::ios::binary | std::ios::ate);
     CompressFile(file);
 
     return 0;

@@ -1,18 +1,1 @@
-sera que esta fazendo tudo certo quando nao tem acento?
-TRIPLA: 12 1 z
-TRIPLA: 16 1 n
-TRIPLA: 0 0 d
-TRIPLA: 0 0 o
-TRIPLA: 17 1 t
-TRIPLA: 17 1 d
-TRIPLA: 5 2 c
-TRIPLA: 27 2 t
-TRIPLA: 11 2 q
-TRIPLA: 28 1 a
-TRIPLA: 18 4 n
-TRIPLA: 38 1 o
-TRIPLA: 22 2 e
-TRIPLA: 0 0 m
-TRIPLA: 43 1 a
-TRIPLA: 22 2 n
-TRIPLA: 22 2 ?
+aaaaaaaabaaaaaaaaa
