@@ -11,6 +11,7 @@
 #include <chrono>
 #include <algorithm>
 #include <unistd.h>
+#include "boost/algorithm/searching/boyer_moore.hpp"
 #define DICTSIZE 32767
 #define LOOKAHEADSIZE 255
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
@@ -90,21 +91,14 @@ Dictionary::Dictionary(){
 void Dictionary::findBestMatch(int lpb, int lpe)
 {
     matchSz = 1;
-    char a = filebuffer[lpb]; /*first char of lookahead*/
-    std::string strMatch0, strMatch1;
-    int i =0;
-    int j=0;
-    int pos = 0;
-    int flag0 = 0;
-    int dictSize = dpe-dpb;
+    
 
-    /*Usar Boyle-moore pra achar a maior substring*/
-    std::cout<<a;
+    /*Usar Boyer-moore pra achar a maior substring*/
+
+    /*Se achar aumenta a match e procura novamente a partir da posição q achou*/
+    /*Se nao achar retorna a tripla vazia*/
 
 
-    exit(1);
-    /*Pegar indice do primeiro valor que tem lookahead[0]*/
-    /*se i == SUffixArray.size() então não achou no array de suffixos*/
     
     return;
 }
