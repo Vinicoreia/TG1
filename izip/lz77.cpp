@@ -12,13 +12,12 @@
 #include <algorithm>
 #include <unistd.h>
 #include "boost/algorithm/searching/boyer_moore.hpp"
-#define DICTSIZE 255
+#define DICTSIZE 32767
 #define LOOKAHEADSIZE 255
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
 
-#define DICTBITS 8
-#define LOOKBITS 8
-#define FACTOR 3
+#define DICTBITS 15
+#define LOOKBITS 9
 using namespace std::chrono;
 
 std::string filebuffer;
@@ -110,9 +109,24 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     /*se não achar retorna tripla vazia;*/
     /*se achar tal que é no fim do dicionario, checa se a match é circular*/
     /*se achar longe do fim do dicionario procura proximo*/
+    
     dictionary = filebuffer.substr(dpb, dpe-dpb);
-    std::string look = filebuffer.substr(lpb, 1);
-
+    std::string look = filebuffer.substr(lpb, 255);
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
+    b = boost::algorithm::boyer_moore_search(dictionary, look);
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(t2 - t1).count();
+    if(duration >2000){
+        std::cout<<"saindo"<<duration;
+        exit(1);
+    }
+    if(strlen(&b.first[0])!=0){
+        triplas.emplace_back(strlen(&b.first[0]), look, look[0], 1);
+        matchSz = look.size();
+        return;
+        }
+    look = filebuffer.substr(lpb, 1);
+   
     while(i<=lpe-lpb){
         b = boost::algorithm::boyer_moore_search(dictionary, look);
         if(strlen(&b.first[0])==0){
@@ -122,7 +136,6 @@ void Dictionary::findBestMatch(int lpb, int lpe)
                 return;
             }else{
                 nchar = look[look.size() - 1];
-                printf("%d", look[look.size()-1]-'a');
                 look.pop_back();
                 triplas.emplace_back(position, look, nchar, 0);
                 matchSz = look.size()+1;
@@ -131,7 +144,6 @@ void Dictionary::findBestMatch(int lpb, int lpe)
         }
         position = strlen(&b.first[0]);
         if(look.size()==lpe-lpb){
-
             nchar = look[look.size() - 1];
             triplas.emplace_back(position, look, '\0', 1);
             matchSz = look.size();
@@ -142,6 +154,8 @@ void Dictionary::findBestMatch(int lpb, int lpe)
             i++;
 
     }
+    std::cout<<"nao deve entrar aqui";
+    exit(1);
     /*Se achar aumenta a match e procura novamente a partir da posição q achou*/
     /*Se nao achar retorna a tripla vazia*/
     return;
@@ -170,21 +184,23 @@ void CompressFile(std::ifstream &file)
     Dictionary *dict = new Dictionary();
     std::string bitString;
     int k=0;
+
     while (look->lpb <filesize)
     {
-        high_resolution_clock::time_point t1 = high_resolution_clock::now();
-        dict->findBestMatch(look->lpb, look->lpe);
-        high_resolution_clock::time_point t2 = high_resolution_clock::now();
-        look->updateLook(dict->matchSz);
-        dict->updateDict(dict->matchSz);
-        auto duration = duration_cast<microseconds>(t2 - t1).count();
-        // std::cout<<duration<<std::endl;
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
+    dict->findBestMatch(look->lpb, look->lpe);
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(t2 - t1).count();
+    look->updateLook(dict->matchSz);
+    dict->updateDict(dict->matchSz);
+
     }
     std::cout<<dict->triplas.size()<<std::endl;
-    for (int i = 0; i < dict->triplas.size(); i++)
-    {
-        std::cout <<"TRIPLA: "<< dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " "<< dict->triplas[i].nextChar<<std::endl;
-    }
+    // for (int i = 0; i < dict->triplas.size(); i++)
+    // {
+    //     std::cout <<"TRIPLA: "<< dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " "<< dict->triplas[i].nextChar<<std::endl;
+    // }
+    
         for (int i = 0; i < dict->triplas.size(); i++)
         {
             if(dict->triplas[i].offset == 0){
@@ -228,7 +244,7 @@ void CompressFile(std::ifstream &file)
 
 
 int main(){
-    std::ifstream file("teste.txt", std::ios::in | std::ios::binary | std::ios::ate);
+    std::ifstream file("bee.bmp", std::ios::in | std::ios::binary | std::ios::ate);
     CompressFile(file);
 
     return 0;
