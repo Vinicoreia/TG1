@@ -91,14 +91,26 @@ Dictionary::Dictionary(){
 void Dictionary::findBestMatch(int lpb, int lpe)
 {
     matchSz = 1;
+    int i =0;
+    std::string match;
+    std::pair<__gnu_cxx::__normal_iterator<char *, std::__cxx11::basic_string<char>>, __gnu_cxx::__normal_iterator<char *, std::__cxx11::basic_string<char>>> b;
     
-
     /*Usar Boyer-moore pra achar a maior substring*/
-
+    while(true){
+        b = boost::algorithm::boyer_moore_search(filebuffer.begin() + dpb, filebuffer.begin() + dpe, filebuffer.begin() + lpb, filebuffer.begin() + lpb+i);
+        if (strlen(&b.first[0])==0){
+            std::cout<<"nao achei";
+            break;
+        }else{
+            std::cout<<&b.second[0];
+            exit(1);
+        }
+        i++;
+    }
     /*Se achar aumenta a match e procura novamente a partir da posição q achou*/
     /*Se nao achar retorna a tripla vazia*/
 
-
+    exit(1);
     
     return;
 }
