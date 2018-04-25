@@ -55,6 +55,9 @@
         "streambuf": "cpp",
         "tuple": "cpp",
         "type_traits": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "*.ipp": "cpp",
+        "rope": "cpp",
+        "slist": "cpp"
     }
 }
