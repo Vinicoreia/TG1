@@ -12,11 +12,11 @@
 #include <algorithm>
 #include <unistd.h>
 #include "boost/algorithm/searching/boyer_moore.hpp"
-#define DICTSIZE 32767
+#define DICTSIZE 255
 #define LOOKAHEADSIZE 255
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
 
-#define DICTBITS 15
+#define DICTBITS 8
 #define LOOKBITS 8
 #define FACTOR 3
 using namespace std::chrono;
@@ -29,7 +29,8 @@ struct Data
     size_t offset;
     std::string match;
     char nextChar;
-    Data(size_t offset, std::string match, char nextChar) : offset(offset), match(match), nextChar(nextChar) {}
+    size_t flagFull= 0;
+    Data(size_t offset, std::string match, char nextChar, size_t flagFull) : offset(offset), match(match), nextChar(nextChar), flagFull(flagFull){}
 };
 
 class Dictionary{
@@ -47,9 +48,8 @@ class Dictionary{
 
 void Dictionary::updateDict(size_t offset){
     dpe += offset;
-    if(dpe-dpb >= DICTSIZE){
-        dpb = dpe-DICTSIZE;
-    }
+    if(dpe-dpb>DICTSIZE)
+        dpb+=offset;
 }
 class Lookahead{
     
@@ -65,12 +65,20 @@ void Lookahead::updateLook(size_t offset)
 {
     lpe += offset;
     lpb += offset;
-    if(lpe > filesize){
+    if (lpe >= filesize)
+    {
         lpe = filesize;
     }
+    if(lpb == filesize)
+    {
+        return;
+    }
+    
 }
 
 Lookahead::Lookahead(int filesize){
+    lpb = 1;
+    lpe = 1;
     if (filesize > LOOKAHEADSIZE)
     {
         lpe += LOOKAHEADSIZE;
@@ -79,39 +87,63 @@ Lookahead::Lookahead(int filesize){
     {
         lpe += filesize;
     }
-    lpb += 1;
 };
 
 
 Dictionary::Dictionary(){
     dpe += 1;
-    triplas.emplace_back(0, "", filebuffer[0]);
+    triplas.emplace_back(0, "", filebuffer[0],0);
 };
 
 void Dictionary::findBestMatch(int lpb, int lpe)
 {
-    matchSz = 1;
-    int i =0;
+    matchSz = 0;
+    int i =1;
     std::string match;
     std::pair<__gnu_cxx::__normal_iterator<char *, std::__cxx11::basic_string<char>>, __gnu_cxx::__normal_iterator<char *, std::__cxx11::basic_string<char>>> b;
-    
+    int position=0;
+    char nchar;
     /*Usar Boyer-moore pra achar a maior substring*/
-    while(true){
-        b = boost::algorithm::boyer_moore_search(filebuffer.begin() + dpb, filebuffer.begin() + dpe, filebuffer.begin() + lpb, filebuffer.begin() + lpb+i);
-        if (strlen(&b.first[0])==0){
-            std::cout<<"nao achei";
-            break;
-        }else{
-            std::cout<<&b.second[0];
-            exit(1);
+    /*first retorna o começo da match*/
+    /*second retorna o resto*/
+    /*The dictionary is my corpus and the lookahead is the pattern*/
+    /*se não achar retorna tripla vazia;*/
+    /*se achar tal que é no fim do dicionario, checa se a match é circular*/
+    /*se achar longe do fim do dicionario procura proximo*/
+    dictionary = filebuffer.substr(dpb, dpe-dpb);
+    std::string look = filebuffer.substr(lpb, 1);
+
+    while(i<=lpe-lpb){
+        b = boost::algorithm::boyer_moore_search(dictionary, look);
+        if(strlen(&b.first[0])==0){
+            if(look.size()==1){
+                triplas.emplace_back(0, "", look[0], 0);
+                matchSz = 1;
+                return;
+            }else{
+                nchar = look[look.size() - 1];
+                printf("%d", look[look.size()-1]-'a');
+                look.pop_back();
+                triplas.emplace_back(position, look, nchar, 0);
+                matchSz = look.size()+1;
+                return;
+            }
         }
-        i++;
+        position = strlen(&b.first[0]);
+        if(look.size()==lpe-lpb){
+
+            nchar = look[look.size() - 1];
+            triplas.emplace_back(position, look, '\0', 1);
+            matchSz = look.size();
+            return;
+        }
+
+            look += filebuffer[lpb + i];
+            i++;
+
     }
     /*Se achar aumenta a match e procura novamente a partir da posição q achou*/
     /*Se nao achar retorna a tripla vazia*/
-
-    exit(1);
-    
     return;
 }
 
@@ -132,27 +164,27 @@ void CompressFile(std::ifstream &file)
 {
     filesize = getFileSize(file);
     std::cout<<filesize<<std::endl;
+
     filebuffer = readFileToBuffer(file);
     Lookahead *look = new Lookahead(filesize);
     Dictionary *dict = new Dictionary();
     std::string bitString;
-    
-    while ( look->lpe-look->lpb > 0 )
+    int k=0;
+    while (look->lpb <filesize)
     {
-        // high_resolution_clock::time_point t1 = high_resolution_clock::now();
-        // std::cout << "DICT " << dict->dictionary << " LOOK" << look->lookahead << std::endl;
+        high_resolution_clock::time_point t1 = high_resolution_clock::now();
         dict->findBestMatch(look->lpb, look->lpe);
-        // high_resolution_clock::time_point t2 = high_resolution_clock::now();
-        // auto duration = duration_cast<microseconds>(t2 - t1).count();
-        // std::cout<<duration<<std::endl;
+        high_resolution_clock::time_point t2 = high_resolution_clock::now();
         look->updateLook(dict->matchSz);
         dict->updateDict(dict->matchSz);
+        auto duration = duration_cast<microseconds>(t2 - t1).count();
+        // std::cout<<duration<<std::endl;
     }
-    // std::cout<<dict->triplas.size()<<std::endl;
-    // for (int i = 0; i < dict->triplas.size(); i++)
-    // {
-    //     std::cout <<"TRIPLA: "<< dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " "<< dict->triplas[i].nextChar<<std::endl;
-    // }
+    std::cout<<dict->triplas.size()<<std::endl;
+    for (int i = 0; i < dict->triplas.size(); i++)
+    {
+        std::cout <<"TRIPLA: "<< dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " "<< dict->triplas[i].nextChar<<std::endl;
+    }
         for (int i = 0; i < dict->triplas.size(); i++)
         {
             if(dict->triplas[i].offset == 0){
