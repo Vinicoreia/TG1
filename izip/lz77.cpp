@@ -341,7 +341,6 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     auto duration = duration_cast<microseconds>(t2 - t1).count();
     if (duration > 1000)
         std::cout <<"4: "<< duration << std::endl;
-    match.pop_back();
     nchar = match[match.size() - 1];
     triplas.emplace_back(position, match, '\0', 1);
     matchSz = match.size();
@@ -378,10 +377,10 @@ void CompressFile()
         look->updateLook(dict->matchSz);
         dict->updateDict(dict->matchSz);
     }
-    // for (int i = 0; i < dict->triplas.size(); i++)
-    // {
-    //     std::cout << dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " " << dict->triplas[i].nextChar << std::endl;
-    // }
+    for (int i = 0; i < dict->triplas.size(); i++)
+    {
+        std::cout << dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " " << dict->triplas[i].nextChar << std::endl;
+    }
     std::cout << dict->triplas.size() << std::endl;
 
     for (int i = 0; i < dict->triplas.size(); i++)
