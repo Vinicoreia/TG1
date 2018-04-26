@@ -47,8 +47,9 @@ class Dictionary{
 
 void Dictionary::updateDict(size_t offset){
     dpe += offset;
-    if(dpe-dpb>DICTSIZE)
-        dpb+=offset;
+    if(dpe>DICTSIZE){
+        dpb = dpe-DICTSIZE;
+    }
 }
 class Lookahead{
     
@@ -109,9 +110,9 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     /*se não achar retorna tripla vazia;*/
     /*se achar tal que é no fim do dicionario, checa se a match é circular*/
     /*se achar longe do fim do dicionario procura proximo*/
-    
     dictionary = filebuffer.substr(dpb, dpe-dpb);
-    std::string look = filebuffer.substr(lpb, 255);
+    std::string look = filebuffer.substr(lpb, lpe-lpb);
+    std::cout<<std::endl<<"lp"<<lpe-lpb<<" "<<look<<std::endl;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     b = boost::algorithm::boyer_moore_search(dictionary, look);
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -123,10 +124,10 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     if(strlen(&b.first[0])!=0){
         triplas.emplace_back(strlen(&b.first[0]), look, look[0], 1);
         matchSz = look.size();
+        
         return;
         }
     look = filebuffer.substr(lpb, 1);
-   
     while(i<=lpe-lpb){
         b = boost::algorithm::boyer_moore_search(dictionary, look);
         if(strlen(&b.first[0])==0){
@@ -143,22 +144,23 @@ void Dictionary::findBestMatch(int lpb, int lpe)
             }
         }else{
             /*ve se tem mais match*/
-            while(dictionary[(dictionary.size()-strlen(&b.first[0])+i)%dictionary.size()]==look[i-1] and i<lpe-lpb){
+            look += filebuffer[lpb + i];
+            i++;
+            while(dictionary[(dictionary.size()-strlen(&b.first[0])+i-1)%dictionary.size()]==look[i-1] and i<lpe-lpb){
                 look += filebuffer[lpb + i];
                 i++;
             }
-            std::cout<<dictionary<<" "<<look<<" "<<i;
+            std::cout<<"W "<<i<<" "<<(dictionary.size()-strlen(&b.first[0])+i-1)%dictionary.size();
+            std::cout<<dictionary<<" "<<look<<std::endl;
         }
         position = strlen(&b.first[0]);
-        if(look.size()==lpe-lpb){
+        if(look.size()==lpe-lpb and dictionary[dictionary.size()-1] == look[look.size()-1]){
             nchar = look[look.size() - 1];
             triplas.emplace_back(position, look, '\0', 1);
             matchSz = look.size();
             return;
         }
-
-            look += filebuffer[lpb + i];
-            i++;
+            
 
     }
     std::cout<<"nao deve entrar aqui";
