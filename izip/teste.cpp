@@ -4,15 +4,17 @@
 #include <typeinfo>
 
 int main()
-{
-    std::string corpus("ai você");
-    std::string pattern("você");
-    std::pair<__gnu_cxx::__normal_iterator<char *, std::__cxx11::basic_string<char>>, __gnu_cxx::__normal_iterator<char *, std::__cxx11::basic_string<char>>> b = boost::algorithm::boyer_moore_search(corpus.begin(), corpus.end(),
-                                                                                                                                                                                                       pattern.begin(), pattern.end());
+{   std::vector<uint8_t> c;
+    c.push_back(0);
+    std::vector<uint8_t> corpus;
+    corpus.push_back(1);
+    std::string pattern("");
+    std::pair<__gnu_cxx::__normal_iterator<unsigned char *, std::vector<unsigned char>>, __gnu_cxx::__normal_iterator<unsigned char *, std::vector<unsigned char>>> b =
+    boost::algorithm::boyer_moore_search(corpus.begin(), corpus.end(), c.begin(), c.end());
     std::cout << typeid(boost::algorithm::boyer_moore_search(corpus.begin(), corpus.end(),
                                                       pattern.begin(), pattern.end())).name();
 
  
-    std::cout << "\n"<<&b.second[0];
+    std::cout << "\n"<<&b.first[0];
     return 0;
 }
