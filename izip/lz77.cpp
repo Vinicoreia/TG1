@@ -14,11 +14,11 @@
 #include "boost/algorithm/searching/boyer_moore.hpp"
 #include <stdint.h>
 #include <stdlib.h>
-#define DICTSIZE 32767
+#define DICTSIZE 255
 #define LOOKAHEADSIZE 255
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
 
-#define DICTBITS 15
+#define DICTBITS 8
 #define LOOKBITS 8
 using namespace std::chrono;
 
@@ -197,18 +197,19 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     /*se achar tal que é no fim do dicionario, checa se a match é circular*/
     /*se achar longe do fim do dicionario procura proximo*/
     
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
     std::pair<uint8_t *, int> p;
     match += filebuffer[lpb];
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
     while(i<=lpe-lpb){
-        p = boyer_moore(filebuffer+dpb, dpe-dpb, filebuffer+lpb, i);
+        p = boyer_moore(filebuffer+dpb, dpe-dpb, filebuffer+lpb, i);   
         if(p.second==-1){
             if(i==1){
                 triplas.emplace_back(0, "", filebuffer[lpb], 0);
                 matchSz = 1;
                 high_resolution_clock::time_point t2 = high_resolution_clock::now();
                 auto duration = duration_cast<microseconds>(t2 - t1).count();
+                
                 return;
             }else{
                 nchar = match[match.size() - 1];
@@ -218,6 +219,8 @@ void Dictionary::findBestMatch(int lpb, int lpe)
 
                 high_resolution_clock::time_point t2 = high_resolution_clock::now();
                 auto duration = duration_cast<microseconds>(t2 - t1).count();
+              
+
                 return;
             }
         }else{
@@ -249,39 +252,30 @@ void Dictionary::findBestMatch(int lpb, int lpe)
 
             high_resolution_clock::time_point t2 = high_resolution_clock::now();
             auto duration = duration_cast<microseconds>(t2 - t1).count();
+            if (duration > 1000)
+                std::cout << duration << std::endl;
             return;
         }
     }
     // std::cout<<"aqui"<<dictionary<<" "<<look;
 
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(t2 - t1).count();
+    if (duration > 1000)
+        std::cout << duration << std::endl;
     match.pop_back();
     nchar = match[match.size() - 1];
     triplas.emplace_back(position, match, '\0', 1);
     matchSz = match.size();
 
-    high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(t2 - t1).count();
     /*Se achar aumenta a match e procura novamente a partir da posição q achou*/
     /*Se nao achar retorna a tripla vazia*/
     return;
 }
 
-std::string readFileToBuffer(std::ifstream &fileIn)
-{
-    return static_cast<std::stringstream const &>(std::stringstream() << fileIn.rdbuf()).str();
-}
-
-unsigned long long getFileSize(std::ifstream &fileIn)
-{
-    unsigned long long filesize = fileIn.tellg();
-    fileIn.seekg(0, std::ios::beg);
-    fileIn.clear();
-    return filesize;
-}
-
 void CompressFile()
 {
-    FILE *file = fopen("bee.bmp", "rb");
+    FILE *file = fopen("Cardbau.png", "rb");
     std::string bitString;
     filebuffer = 0;
     filesize = 0;
@@ -306,39 +300,39 @@ void CompressFile()
         look->updateLook(dict->matchSz);
         dict->updateDict(dict->matchSz);
     }
-    for (int i = 0; i < dict->triplas.size(); i++)
-    {
-        std::cout << dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " " << dict->triplas[i].nextChar << std::endl;
-    }
-    std::cout << dict->triplas.size() << std::endl;
-
     // for (int i = 0; i < dict->triplas.size(); i++)
     // {
-    //     if(dict->triplas[i].offset == 0){
-    //         /*nao teve match adiciona flag 0 e o nextchar*/
-    //         bitString+= "0";
-    //         bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
-    //     }else if((dict->triplas[i].match.size()*9 + 8) < (1+DICTBITS+LOOKBITS+8)){
-    //         /*representar a match com DICTSIZE+DICTBITS nao vale a pena*/
-    //         for (int j = 0; j < dict->triplas[i].match.size(); j++)
-    //         {
-    //             bitString += "0"; /*FLAG*/
-    //             bitString.append(std::bitset<8>(dict->triplas[i].match[j]).to_string());
-    //         }
-    //         bitString += "0"; /*FLAG*/
-    //         bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
-    //     }else{
-    //         bitString += "1"; /*FLAG*/
-    //         bitString.append(std::bitset<DICTBITS>(dict->triplas[i].offset).to_string());
-    //         bitString.append(std::bitset<LOOKBITS>(dict->triplas[i].match.size()).to_string());
-    //         bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
-    //     }
+    //     std::cout << dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " " << dict->triplas[i].nextChar << std::endl;
     // }
-    // while (bitString.size() % 8 != 0)
-    // {
-    //     bitString += "0";
-    // }
-    // std::cout<<bitString.size()/8;
+    std::cout << dict->triplas.size() << std::endl;
+
+    for (int i = 0; i < dict->triplas.size(); i++)
+    {
+        if(dict->triplas[i].offset == 0){
+            /*nao teve match adiciona flag 0 e o nextchar*/
+            bitString+= "0";
+            bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
+        }else if((dict->triplas[i].match.size()*9 + 8) < (1+DICTBITS+LOOKBITS+8)){
+            /*representar a match com DICTSIZE+DICTBITS nao vale a pena*/
+            for (int j = 0; j < dict->triplas[i].match.size(); j++)
+            {
+                bitString += "0"; /*FLAG*/
+                bitString.append(std::bitset<8>(dict->triplas[i].match[j]).to_string());
+            }
+            bitString += "0"; /*FLAG*/
+            bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
+        }else{
+            bitString += "1"; /*FLAG*/
+            bitString.append(std::bitset<DICTBITS>(dict->triplas[i].offset).to_string());
+            bitString.append(std::bitset<LOOKBITS>(dict->triplas[i].match.size()).to_string());
+            bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
+        }
+    }
+    while (bitString.size() % 8 != 0)
+    {
+        bitString += "0";
+    }
+    std::cout<<bitString.size()/8;
     // std::ofstream output("c.bin", std::ios::out | std::ios::binary);
     // unsigned long c;
     // while (!bitString.empty())
