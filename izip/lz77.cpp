@@ -383,6 +383,13 @@ void CompressFile()
     }
     std::cout << dict->triplas.size() << std::endl;
 
+
+/*
+* A escrita será feita da seguinte forma:
+    se for uma match pequena                                  0<char>
+    se for uma match muito grande tal que encheu o lookahead: 1<comprimento>1<char>
+    se for uma match representada pelo algoritmo:             1<comprimento>0<dicionario><char>
+*/
     for (int i = 0; i < dict->triplas.size(); i++)
     {
         if(dict->triplas[i].offset == 0){
