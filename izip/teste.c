@@ -1,8 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
-#include <iostream>
-#include <string>
-#include <string.h>
+#include <stdio.h>
 #define ALPHABET_LEN 256
 #define NOT_FOUND patlen
 #define max(a, b) ((a < b) ? b : a)
@@ -118,7 +116,7 @@ void make_delta2(int *delta2, uint8_t *pat, int32_t patlen)
     }
 }
 
-std::pair<uint8_t *, int> boyer_moore(uint8_t *string, uint32_t stringlen, uint8_t *pat, uint32_t patlen)
+uint8_t *boyer_moore(uint8_t *string, uint32_t stringlen, uint8_t *pat, uint32_t patlen)
 {
     int i;
     int delta1[ALPHABET_LEN];
@@ -130,7 +128,7 @@ std::pair<uint8_t *, int> boyer_moore(uint8_t *string, uint32_t stringlen, uint8
     if (patlen == 0)
     {
         free(delta2);
-        return std::make_pair(string,-1);
+        return string;
     }
 
     i = patlen - 1;
@@ -145,22 +143,18 @@ std::pair<uint8_t *, int> boyer_moore(uint8_t *string, uint32_t stringlen, uint8
         if (j < 0)
         {
             free(delta2);
-            return std::make_pair((string + i + 1), i+1);
+            return (string + i + 1);
         }
 
         i += max(delta1[string[i]], delta2[j]);
     }
     free(delta2);
-    return std::make_pair(string,-1);
+    return NULL;
 }
 
-int main(){
-    uint8_t * a = (uint8_t*)"\tt\0\0aaaaaaaabbbb";
-    uint8_t *b = (uint8_t *)"ab";
-
-    std::pair<uint8_t *,int>f = boyer_moore(a,16,b,2 );
-    std::cout<<*f.first;
+int main()
+{
+    uint8_t *f = boyer_moore("vamos tes\0\0tar", 13, "\0\0", 2);
+    printf("%c",*(f+2));
     return 0;
 }
-dpb = 7
-dpe = 11
