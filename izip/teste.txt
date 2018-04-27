@@ -1,1 +1,14 @@
-mississippi
+aaaaaaaa aaaaaaabaaaa aaaaaaaaaaaaacaaaaaaaaaaaaaabaaaaaaaaaa
+
+8 3 a
+4 3 a
+8 3 a
+8 3 a
+8 1 c
+8 3 a
+4 3 a
+8 3 a
+8 2 b
+8 3 a
+4 3 a
+8 1 a

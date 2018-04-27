@@ -14,11 +14,11 @@
 #include "boost/algorithm/searching/boyer_moore.hpp"
 #include <stdint.h>
 #include <stdlib.h>
-#define DICTSIZE 32767
+#define DICTSIZE 255
 #define LOOKAHEADSIZE 255
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
 
-#define DICTBITS 15
+#define DICTBITS 8
 #define LOOKBITS 8
 using namespace std::chrono;
 
@@ -126,19 +126,16 @@ class Dictionary{
         size_t dpb = 0; /*Dictionary pointer to begin of Dictionary*/
         size_t dpe = 0; /*Dictionary pointer to end of Dictionary*/
         void findBestMatch(int lpe, int lpb);/*This function has to return the Data to the lookahead*/
-        size_t hpe = 0, hpb = 0;             /*points to end of hash*/
         int P[DICTSIZE + 1][LOOKAHEADSIZE], stp;
         std::deque<Data> triplas;
 };
 
 void Dictionary::updateDict(size_t offset){
+    if(dpe >=filesize)
+        return;
     dpe += offset;
     if(dpe>DICTSIZE){
         dpb = dpe-DICTSIZE;
-    }
-    if (dpe > hpe)
-    {
-        hpb = hpe;
     }
 }
 class Lookahead{
@@ -158,7 +155,7 @@ void Lookahead::updateLook(size_t offset)
     {
         lpe = filesize;
     }
-    if(lpb == filesize)
+    if(lpb >= filesize)
     {
         return;
     }
@@ -168,7 +165,7 @@ void Lookahead::updateLook(size_t offset)
 Lookahead::Lookahead(int filesize){
     lpb = 1;
     lpe = 1;
-    if (filesize > LOOKAHEADSIZE)
+    if (filesize >= LOOKAHEADSIZE)
     {
         lpe += LOOKAHEADSIZE;
     }
@@ -201,22 +198,25 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     std::pair<uint8_t *, int> p;
     /*tentar match cheia antes*/
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    p = boyer_moore(filebuffer + dpb, dpe - dpb, filebuffer + lpb, LOOKAHEADSIZE);
-    position = dpe - p.second;
-
+    p = boyer_moore(filebuffer + dpb, dpe - dpb, filebuffer + lpb, lpe-lpb);
+    position = (dpe-(dpb+ p.second));
+    
     /*CHECAR SE é FULL só para certos tipos aumenta a velocidade de compressão*/
     if (p.second != -1)
-    {   
-        match.append((const char*)(filebuffer+p.second), LOOKAHEADSIZE);
-        triplas.emplace_back(position, match, '\0', 1);
-        matchSz = match.size();
+    {
+        match.append((const char*)(filebuffer+dpb+p.second), lpe-lpb);
+        nchar = match[match.size() - 1];
+        match.pop_back();
+        triplas.emplace_back(position, match, nchar, 0);
+        matchSz = match.size()+1;
         high_resolution_clock::time_point t2 = high_resolution_clock::now();
         auto duration = duration_cast<microseconds>(t2 - t1).count();
         return;
     }
-    position = 0;
+    position = -1;
+    
     match += filebuffer[lpb];
-    while(i<=lpe-lpb){
+    while(i<lpe-lpb){
         p = boyer_moore(filebuffer+dpb, dpe-dpb, filebuffer+lpb, i);   
         if(p.second==-1){
             if(i==1){
@@ -226,11 +226,11 @@ void Dictionary::findBestMatch(int lpb, int lpe)
                 auto duration = duration_cast<microseconds>(t2 - t1).count();
                 return;
             }else{
+                
                 nchar = match[match.size() - 1];
                 match.pop_back();
                 triplas.emplace_back(position, match, nchar, 0);
                 matchSz = match.size() + 1;
-
                 high_resolution_clock::time_point t2 = high_resolution_clock::now();
                 auto duration = duration_cast<microseconds>(t2 - t1).count();
                 return;
@@ -240,7 +240,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
 
             match += filebuffer[lpb + i];
             /*circbuffer*/
-            int circbuffer = p.second+i;
+            int circbuffer = dpb+p.second+i;
             if(circbuffer == dpe){
                 circbuffer -= (dpe-dpb);
             }
@@ -255,27 +255,29 @@ void Dictionary::findBestMatch(int lpb, int lpe)
                 }
             }
             }
-            position = dpe-p.second;
-        if (match.size() == lpe - lpb and dictionary[dictionary.size() - 1] == match[match.size() - 1])
-        {
-            nchar = match[match.size() - 1];
-            triplas.emplace_back(position, match, '\0', 1);
-            matchSz = match.size();
+            position = (dpe - (dpb + p.second));
+            if (match.size() == lpe - lpb and dictionary[dictionary.size() - 1] == match[match.size() - 1])
+            {
+                nchar = match[match.size() - 1];
+                match.pop_back();
+                triplas.emplace_back(position, match, nchar, 0);
+                matchSz = match.size() + 1;
 
-            high_resolution_clock::time_point t2 = high_resolution_clock::now();
-            auto duration = duration_cast<microseconds>(t2 - t1).count();
-            return;
+                high_resolution_clock::time_point t2 = high_resolution_clock::now();
+                auto duration = duration_cast<microseconds>(t2 - t1).count();
+                return;
         }
     }
-    // std::cout<<"aqui"<<dictionary<<" "<<look;
 
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(t2 - t1).count();
     if(match.size()>LOOKAHEADSIZE){
         match.pop_back();
     }
-    triplas.emplace_back(position, match, '\0', 1);
-    matchSz = match.size();
+    nchar = match[match.size() - 1];
+    match.pop_back();
+    triplas.emplace_back(position, match, nchar, 0);
+    matchSz = match.size()+1;
 
     /*Se achar aumenta a match e procura novamente a partir da posição q achou*/
     /*Se nao achar retorna a tripla vazia*/
@@ -309,13 +311,8 @@ void CompressFile()
         look->updateLook(dict->matchSz);
         dict->updateDict(dict->matchSz);
     }
-    for (int i = 0; i < dict->triplas.size(); i++)
-    {
-        std::cout << dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " " << dict->triplas[i].nextChar << std::endl;
-    }
-    std::cout << dict->triplas.size() << std::endl;
 
-
+    // std::cout << dict->triplas.size() << std::endl;
 /*
 * A escrita será feita da seguinte forma:
     se for uma match pequena                                  0<char>
@@ -324,59 +321,154 @@ void CompressFile()
 */
     for (int i = 0; i < dict->triplas.size(); i++)
     {
-        if(dict->triplas[i].flagFull == 0){
-            if(dict->triplas[i].offset == 0){
-                /*nao teve match adiciona flag 0 e o nextchar*/
-                bitString+= "0";
-                bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
-            }else if((dict->triplas[i].match.size()*9 + 8) < (1+DICTBITS+LOOKBITS+8)){
-                /*representar a match com DICTSIZE+DICTBITS nao vale a pena*/
-                for (int j = 0; j < dict->triplas[i].match.size(); j++)
-                {
-                    bitString += "0"; /*FLAG*/
-                    bitString.append(std::bitset<8>(dict->triplas[i].match[j]).to_string());
-                }
-                bitString += "0"; /*FLAG*/
-                bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
-            }else{
-                bitString += "1"; /*FLAG*/
-                bitString.append(std::bitset<LOOKBITS>(dict->triplas[i].match.size()).to_string());
-                bitString += "0"; /*FLAG*/
-                bitString.append(std::bitset<DICTBITS>(dict->triplas[i].offset).to_string());
-                bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
-            }
-        }else{
-                bitString += "1"; /*FLAG*/
-                bitString.append(std::bitset<LOOKBITS>(dict->triplas[i].match.size()).to_string());
-                bitString += "1"; /*FLAG*/
-                bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
+        if (dict->triplas[i].offset == 0 or dict->triplas[i].match.size()==0)
+        {
+            /*nao teve match adiciona flag 0 e o nextchar*/
+            bitString += "0";
+            bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
         }
-        
+        else if ((dict->triplas[i].match.size() * 9 + 8) < (1 + DICTBITS + LOOKBITS + 8))
+        {
+            /*representar a match com DICTSIZE+DICTBITS nao vale a pena*/
+            for (int j = 0; j < dict->triplas[i].match.size(); j++)
+            {
+                bitString += "0"; /*FLAG*/
+                bitString.append(std::bitset<8>(dict->triplas[i].match[j]).to_string());
+            }
+            bitString += "0"; /*FLAG*/
+            bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
+        }
+        else
+        {
+            bitString += "1"; /*FLAG*/
+            bitString.append(std::bitset<DICTBITS>(dict->triplas[i].offset).to_string());
+            bitString.append(std::bitset<LOOKBITS>(dict->triplas[i].match.size()).to_string());
+            bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
+        }
     }
     while (bitString.size() % 8 != 0)
     {
         bitString += "0";
     }
+
     std::cout<<bitString.size()/8;
-    // std::ofstream output("c.bin", std::ios::out | std::ios::binary);
-    // unsigned long c;
-    // while (!bitString.empty())
-    // {
-    //     std::bitset<8> b(bitString);
-    //     c = b.to_ulong();
-    //     output.write(reinterpret_cast<const char *>(&c), 1);
-    //     bitString.erase(0, 8);
-    // }
-    // output.close();
+    std::ofstream output("c.bin", std::ios::out | std::ios::binary);
+    unsigned long c;
+    while (!bitString.empty())
+    {
+        std::bitset<8> b(bitString);
+        c = b.to_ulong();
+        output.write(reinterpret_cast<const char *>(&c), 1);
+        bitString.erase(0, 8);
+    }
+    output.close();
     free(filebuffer);
     delete look;
     delete dict;
     return;
 }
+std::string readFileToBuffer(std::ifstream &fileIn)
+{
+    return static_cast<std::stringstream const &>(std::stringstream() << fileIn.rdbuf()).str();
+}
 
+std::string charToBin(char c)
+{
+    return std::bitset<8>(c).to_string();
+}
+
+void decompressFile()
+{
+    std::ifstream file("c.bin", std::ios::in | std::ios::binary);
+
+    std::streampos start = file.tellg();
+
+    // go to the end
+    file.seekg(0, std::ios::end);
+
+    // get the ending position
+    std::streampos end = file.tellg();
+
+    // go back to the start
+    file.seekg(0, std::ios::beg);
+
+    // create a vector to hold the data that
+    // is resized to the total size of the file
+    std::vector<char> fileBuffer;
+    fileBuffer.resize(static_cast<size_t>(end - start));
+    // read it in
+    file.read(&fileBuffer[0], fileBuffer.size());
+    file.close();
+
+    std::string bitString;
+
+    while (fileBuffer.size() > 0)
+    {
+        bitString.append(charToBin(fileBuffer.at(0)));
+        fileBuffer.erase(fileBuffer.begin());
+    }
+    std::string bitChar;
+    std::string lookaheadBits;
+    std::string dictBits;
+    std::string outString;
+    std::string dict;
+    int jump;
+    int len;
+    char nextChar;
+    size_t windowPointer = 0;
+
+    while (bitString.size() >= 8)
+    {
+        if (bitString[0] == '0')
+        {
+            bitString.erase(0, 1);
+            bitChar = bitString.substr(0, 8);
+            bitString.erase(0, 8);
+            nextChar = static_cast<char>(std::stoi(bitChar, 0, 2));
+
+            outString += nextChar;
+            dict += nextChar;
+
+            windowPointer += 1;
+            if (dict.size() > DICTSIZE)
+            {
+                dict.erase(0, 1);
+            }
+        }
+        else
+        {
+            bitString.erase(0, 1);
+            dictBits = bitString.substr(0, DICTBITS);
+            lookaheadBits = bitString.substr(DICTBITS, LOOKBITS);
+            bitChar = bitString.substr(DICTBITS + LOOKBITS, 8);
+            bitString.erase(0, DICTBITS + LOOKBITS + 8);
+            nextChar = static_cast<char>(std::stoi(bitChar, 0, 2));
+            jump = stoi(dictBits, 0, 2);
+            len = stoi(lookaheadBits, 0, 2);
+            for (int i = 0; i < len; i++)
+            {
+                outString += dict[(dict.size() - jump + i) % dict.size()];
+            }
+            outString += nextChar;
+            dict.append(outString.substr(windowPointer, len + 1));
+            windowPointer += len + 1;
+            if (dict.size() > DICTSIZE)
+            {
+                dict.erase(0, len + 1);
+            }
+        }
+    }
+
+    // std::cout<<outString;
+    std::ofstream output("B.bmp", std::ios::out | std::ios::binary);
+    output << outString; //WRITE TO FILE
+    std::cout << "Final filesize after decompressing: " << outString.size() << " bytes" << std::endl;
+
+    output.close();
+}
 
 int main(){
-    CompressFile();
-
+    // CompressFile();
+    decompressFile();
     return 0;
 }
