@@ -10,15 +10,13 @@
 #include <sstream>
 #include <chrono>
 #include <algorithm>
-#include <unistd.h>
-#include "boost/algorithm/searching/boyer_moore.hpp"
 #include <stdint.h>
 #include <stdlib.h>
-#define DICTSIZE 255
+#define DICTSIZE 32767
 #define LOOKAHEADSIZE 255
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
 
-#define DICTBITS 8
+#define DICTBITS 15
 #define LOOKBITS 8
 using namespace std::chrono;
 
@@ -188,20 +186,9 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     std::string match;
     int position=0;
     char nchar;
-    /*Usar Boyer-moore pra achar a maior substring*/
-    /*first retorna o começo da match*/
-    /*second retorna o resto*/
-    /*The dictionary is my corpus and the lookahead is the pattern*/
-    /*se não achar retorna tripla vazia;*/
-    /*se achar tal que é no fim do dicionario, checa se a match é circular*/
-    /*se achar longe do fim do dicionario procura proximo*/
     std::pair<uint8_t *, int> p;
-    /*tentar match cheia antes*/
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
     p = boyer_moore(filebuffer + dpb, dpe - dpb, filebuffer + lpb, lpe-lpb);
-    position = (dpe-(dpb+ p.second));
-    
-    /*CHECAR SE é FULL só para certos tipos aumenta a velocidade de compressão*/
+    position = (dpe-(dpb+ p.second));    
     if (p.second != -1)
     {
         match.append((const char*)(filebuffer+dpb+p.second), lpe-lpb);
@@ -209,12 +196,9 @@ void Dictionary::findBestMatch(int lpb, int lpe)
         match.pop_back();
         triplas.emplace_back(position, match, nchar, 0);
         matchSz = match.size()+1;
-        high_resolution_clock::time_point t2 = high_resolution_clock::now();
-        auto duration = duration_cast<microseconds>(t2 - t1).count();
         return;
     }
     position = -1;
-    
     match += filebuffer[lpb];
     while(i<lpe-lpb){
         p = boyer_moore(filebuffer+dpb, dpe-dpb, filebuffer+lpb, i);   
@@ -222,8 +206,6 @@ void Dictionary::findBestMatch(int lpb, int lpe)
             if(i==1){
                 triplas.emplace_back(0, "", filebuffer[lpb], 0);
                 matchSz = 1;
-                high_resolution_clock::time_point t2 = high_resolution_clock::now();
-                auto duration = duration_cast<microseconds>(t2 - t1).count();
                 return;
             }else{
                 
@@ -231,8 +213,6 @@ void Dictionary::findBestMatch(int lpb, int lpe)
                 match.pop_back();
                 triplas.emplace_back(position, match, nchar, 0);
                 matchSz = match.size() + 1;
-                high_resolution_clock::time_point t2 = high_resolution_clock::now();
-                auto duration = duration_cast<microseconds>(t2 - t1).count();
                 return;
             }
         }else{
@@ -262,15 +242,11 @@ void Dictionary::findBestMatch(int lpb, int lpe)
                 match.pop_back();
                 triplas.emplace_back(position, match, nchar, 0);
                 matchSz = match.size() + 1;
-
-                high_resolution_clock::time_point t2 = high_resolution_clock::now();
-                auto duration = duration_cast<microseconds>(t2 - t1).count();
                 return;
         }
     }
 
-    high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(t2 - t1).count();
+    
     if(match.size()>LOOKAHEADSIZE){
         match.pop_back();
     }
@@ -286,7 +262,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
 
 void CompressFile()
 {
-    FILE *file = fopen("bee.bmp", "rb");
+    FILE *file = fopen("Cardbau.png", "rb");
     std::string bitString;
     filebuffer = 0;
     filesize = 0;
@@ -302,34 +278,27 @@ void CompressFile()
 
     Lookahead *look = new Lookahead(filesize);
     Dictionary *dict = new Dictionary();
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
     while (look->lpb < filesize)
     {
-        high_resolution_clock::time_point t1 = high_resolution_clock::now();
         dict->findBestMatch(look->lpb, look->lpe);
-        high_resolution_clock::time_point t2 = high_resolution_clock::now();
-        auto duration = duration_cast<microseconds>(t2 - t1).count();
         look->updateLook(dict->matchSz);
         dict->updateDict(dict->matchSz);
     }
-
-    // std::cout << dict->triplas.size() << std::endl;
-/*
-* A escrita será feita da seguinte forma:
-    se for uma match pequena                                  0<char>
-    se for uma match muito grande tal que encheu o lookahead: 1<comprimento>1<char>
-    se for uma match representada pelo algoritmo:             1<comprimento>0<dicionario><char>
-*/
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(t2 - t1).count();
+    std::cout << duration;
+    exit(1);
     for (int i = 0; i < dict->triplas.size(); i++)
     {
         if (dict->triplas[i].offset == 0 or dict->triplas[i].match.size()==0)
         {
-            /*nao teve match adiciona flag 0 e o nextchar*/
             bitString += "0";
             bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
         }
         else if ((dict->triplas[i].match.size() * 9 + 8) < (1 + DICTBITS + LOOKBITS + 8))
         {
-            /*representar a match com DICTSIZE+DICTBITS nao vale a pena*/
             for (int j = 0; j < dict->triplas[i].match.size(); j++)
             {
                 bitString += "0"; /*FLAG*/
@@ -350,8 +319,7 @@ void CompressFile()
     {
         bitString += "0";
     }
-
-    std::cout<<bitString.size()/8;
+    // std::cout<<bitString.size()/8;
     std::ofstream output("c.bin", std::ios::out | std::ios::binary);
     unsigned long c;
     while (!bitString.empty())
@@ -365,6 +333,7 @@ void CompressFile()
     free(filebuffer);
     delete look;
     delete dict;
+    
     return;
 }
 std::string readFileToBuffer(std::ifstream &fileIn)
@@ -380,26 +349,14 @@ std::string charToBin(char c)
 void decompressFile()
 {
     std::ifstream file("c.bin", std::ios::in | std::ios::binary);
-
     std::streampos start = file.tellg();
-
-    // go to the end
     file.seekg(0, std::ios::end);
-
-    // get the ending position
     std::streampos end = file.tellg();
-
-    // go back to the start
     file.seekg(0, std::ios::beg);
-
-    // create a vector to hold the data that
-    // is resized to the total size of the file
     std::vector<char> fileBuffer;
     fileBuffer.resize(static_cast<size_t>(end - start));
-    // read it in
     file.read(&fileBuffer[0], fileBuffer.size());
     file.close();
-
     std::string bitString;
 
     while (fileBuffer.size() > 0)
@@ -459,7 +416,6 @@ void decompressFile()
         }
     }
 
-    // std::cout<<outString;
     std::ofstream output("B.bmp", std::ios::out | std::ios::binary);
     output << outString; //WRITE TO FILE
     std::cout << "Final filesize after decompressing: " << outString.size() << " bytes" << std::endl;
@@ -468,7 +424,7 @@ void decompressFile()
 }
 
 int main(){
-    // CompressFile();
-    decompressFile();
+    CompressFile();
+    // decompressFile();
     return 0;
 }
