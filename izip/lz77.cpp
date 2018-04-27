@@ -25,53 +25,6 @@ using namespace std::chrono;
 uint8_t* filebuffer;
 int filesize;
 /*O LZ77 vai receber os dados já tratados, cada .cpp deve funcionar atomicamente*/
-#define REP(i, n) for (int i = 0; i < (int)(n); ++i)
-
-const int MAXN = 1<<21;
-int N, gap;
-int sa[MAXN], pos[MAXN], tmp[MAXN], lcp[MAXN];
-
-bool sufCmp(int i, int j)
-{
-    if (pos[i] != pos[j])
-        return pos[i] < pos[j];
-    i += gap;
-    j += gap;
-    return (i < N && j < N) ? pos[i] < pos[j] : i > j;
-}
-
-void buildSA(int N)
-{
-
-    for (int i = 0; i < (int)(N); ++i)
-    {
-        sa[i] = i, pos[i] = filebuffer[i];
-    }
-    for (gap = 1;; gap *= 2)
-    {
-        std::sort(sa, sa + N, sufCmp);
-        REP(i, N - 1)
-        tmp[i + 1] = tmp[i] + sufCmp(sa[i], sa[i + 1]);
-        REP(i, N)
-        pos[sa[i]] = tmp[i];
-        if (tmp[N - 1] == N - 1)
-            break;
-    }
-}
-
-void buildLCP()
-{
-    for (int i = 0, k = 0; i < N; ++i)
-        if (pos[i] != N - 1)
-        {
-            for (int j = sa[pos[i] + 1]; filebuffer[i + k] == filebuffer[j + k];)
-                ++k;
-            lcp[pos[i]] = k;
-            if (k)
-                --k;
-        }
-}
-
 #define ALPHABET_LEN 256
 #define NOT_FOUND patlen
 #define max(a, b) ((a < b) ? b : a)
@@ -173,12 +126,9 @@ class Dictionary{
         size_t dpb = 0; /*Dictionary pointer to begin of Dictionary*/
         size_t dpe = 0; /*Dictionary pointer to end of Dictionary*/
         void findBestMatch(int lpe, int lpb);/*This function has to return the Data to the lookahead*/
-        void hashDict();                     /*creates an unordered_map of the values in the dict to reduce search for the biggest match*/
         size_t hpe = 0, hpb = 0;             /*points to end of hash*/
-
         int P[DICTSIZE + 1][LOOKAHEADSIZE], stp;
         std::deque<Data> triplas;
-        std::unordered_map<int, int> hash;
 };
 
 void Dictionary::updateDict(size_t offset){
@@ -189,7 +139,6 @@ void Dictionary::updateDict(size_t offset){
     if (dpe > hpe)
     {
         hpb = hpe;
-        hashDict();
     }
 }
 class Lookahead{
@@ -201,22 +150,6 @@ class Lookahead{
         size_t lpe = 0; /*lookahead pointer to end of lookahead*/
         void updateLook(size_t offset);
 };
-void Dictionary::hashDict()
-{
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
-
-    hpb = dpb;
-    hpe = dpb + MAXN;
-    if (hpe > filesize)
-    {
-        hpe = filesize;
-    }
-    buildSA(filesize);
-    buildLCP();
-    high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(t2 - t1).count();
-    std::cout<<"SA duration "<<duration<<"\n\n";
-}
 void Lookahead::updateLook(size_t offset)
 {
     lpe += offset;
@@ -249,7 +182,6 @@ Lookahead::Lookahead(int filesize){
 Dictionary::Dictionary(){
     dpe += 1;
     triplas.emplace_back(0, "", filebuffer[0],0);
-    hashDict();
 };
 
 void Dictionary::findBestMatch(int lpb, int lpe)
@@ -267,8 +199,23 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     /*se achar tal que é no fim do dicionario, checa se a match é circular*/
     /*se achar longe do fim do dicionario procura proximo*/
     std::pair<uint8_t *, int> p;
-    match += filebuffer[lpb];
+    /*tentar match cheia antes*/
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
+    p = boyer_moore(filebuffer + dpb, dpe - dpb, filebuffer + lpb, LOOKAHEADSIZE);
+    position = dpe - p.second;
+
+    /*CHECAR SE é FULL só para certos tipos aumenta a velocidade de compressão*/
+    if (p.second != -1)
+    {   
+        match.append((const char*)(filebuffer+p.second), LOOKAHEADSIZE);
+        triplas.emplace_back(position, match, '\0', 1);
+        matchSz = match.size();
+        high_resolution_clock::time_point t2 = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(t2 - t1).count();
+        return;
+    }
+    position = 0;
+    match += filebuffer[lpb];
     while(i<=lpe-lpb){
         p = boyer_moore(filebuffer+dpb, dpe-dpb, filebuffer+lpb, i);   
         if(p.second==-1){
@@ -277,9 +224,6 @@ void Dictionary::findBestMatch(int lpb, int lpe)
                 matchSz = 1;
                 high_resolution_clock::time_point t2 = high_resolution_clock::now();
                 auto duration = duration_cast<microseconds>(t2 - t1).count();
-
-                if (duration > 1000)
-                    std::cout <<"1: "<< duration << std::endl;
                 return;
             }else{
                 nchar = match[match.size() - 1];
@@ -289,11 +233,6 @@ void Dictionary::findBestMatch(int lpb, int lpe)
 
                 high_resolution_clock::time_point t2 = high_resolution_clock::now();
                 auto duration = duration_cast<microseconds>(t2 - t1).count();
-
-                if (duration > 5000){
-                    std::cout<<"2: " << duration << std::endl;
-                }
-
                 return;
             }
         }else{
@@ -325,8 +264,6 @@ void Dictionary::findBestMatch(int lpb, int lpe)
 
             high_resolution_clock::time_point t2 = high_resolution_clock::now();
             auto duration = duration_cast<microseconds>(t2 - t1).count();
-            if (duration > 1000)
-                std::cout <<"3: "<< duration << std::endl;
             return;
         }
     }
@@ -334,8 +271,6 @@ void Dictionary::findBestMatch(int lpb, int lpe)
 
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(t2 - t1).count();
-    if (duration > 1000)
-        std::cout <<"4: "<< duration << std::endl;
     if(match.size()>LOOKAHEADSIZE){
         match.pop_back();
     }
@@ -349,7 +284,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
 
 void CompressFile()
 {
-    FILE *file = fopen("teste.txt", "rb");
+    FILE *file = fopen("bee.bmp", "rb");
     std::string bitString;
     filebuffer = 0;
     filesize = 0;
@@ -374,10 +309,10 @@ void CompressFile()
         look->updateLook(dict->matchSz);
         dict->updateDict(dict->matchSz);
     }
-    // for (int i = 0; i < dict->triplas.size(); i++)
-    // {
-    //     std::cout << dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " " << dict->triplas[i].nextChar << std::endl;
-    // }
+    for (int i = 0; i < dict->triplas.size(); i++)
+    {
+        std::cout << dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " " << dict->triplas[i].nextChar << std::endl;
+    }
     std::cout << dict->triplas.size() << std::endl;
 
 
