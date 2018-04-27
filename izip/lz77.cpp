@@ -27,7 +27,7 @@ int filesize;
 /*O LZ77 vai receber os dados já tratados, cada .cpp deve funcionar atomicamente*/
 #define REP(i, n) for (int i = 0; i < (int)(n); ++i)
 
-const int MAXN = DICTSIZE*4;
+const int MAXN = 1<<21;
 int N, gap;
 int sa[MAXN], pos[MAXN], tmp[MAXN], lcp[MAXN];
 
@@ -40,12 +40,12 @@ bool sufCmp(int i, int j)
     return (i < N && j < N) ? pos[i] < pos[j] : i > j;
 }
 
-void buildSA(int N, int p)
+void buildSA(int N)
 {
 
     for (int i = 0; i < (int)(N); ++i)
     {
-        sa[i] = i, pos[i] = filebuffer[i+p];
+        sa[i] = i, pos[i] = filebuffer[i];
     }
     for (gap = 1;; gap *= 2)
     {
@@ -211,11 +211,8 @@ void Dictionary::hashDict()
     {
         hpe = filesize;
     }
-    buildSA(strlen((const char*)filebuffer), hpb);
-    for(int i =0; i< 10; i++){
-        std::cout<<sa[i]<<" ";
-    }
-    // buildLCP();
+    buildSA(filesize);
+    buildLCP();
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(t2 - t1).count();
     std::cout<<"SA duration "<<duration<<"\n\n";
@@ -269,8 +266,6 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     /*se não achar retorna tripla vazia;*/
     /*se achar tal que é no fim do dicionario, checa se a match é circular*/
     /*se achar longe do fim do dicionario procura proximo*/
-    
-
     std::pair<uint8_t *, int> p;
     match += filebuffer[lpb];
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -295,7 +290,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
                 high_resolution_clock::time_point t2 = high_resolution_clock::now();
                 auto duration = duration_cast<microseconds>(t2 - t1).count();
 
-                if (duration > 1000){
+                if (duration > 5000){
                     std::cout<<"2: " << duration << std::endl;
                 }
 
@@ -354,7 +349,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
 
 void CompressFile()
 {
-    FILE *file = fopen("bee.bmp", "rb");
+    FILE *file = fopen("teste.txt", "rb");
     std::string bitString;
     filebuffer = 0;
     filesize = 0;
