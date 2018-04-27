@@ -155,12 +155,15 @@ std::pair<uint8_t *, int> boyer_moore(uint8_t *string, uint32_t stringlen, uint8
 }
 
 int main(){
-    uint8_t * a = (uint8_t*)"\tt\0\0aaaaaaaabbbb";
+    uint8_t * a = (uint8_t*)"vou colocar qualquer coisa aqui";
     uint8_t *b = (uint8_t *)"ab";
 
-    std::pair<uint8_t *,int>f = boyer_moore(a,16,b,2 );
-    std::cout<<*f.first;
+    // std::pair<uint8_t *,int>f = boyer_moore(a,16,b,2 );
+    // std::cout<<f.second;
+
+    std::string c;
+
+    c.append((const char *)(a+4),10);
+    std::cout<<c;
     return 0;
 }
-dpb = 7
-dpe = 11
