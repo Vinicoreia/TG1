@@ -14,12 +14,12 @@
 #include "boost/algorithm/searching/boyer_moore.hpp"
 #include <stdint.h>
 #include <stdlib.h>
-#define DICTSIZE 8191
-#define LOOKAHEADSIZE 31
+#define DICTSIZE 32767
+#define LOOKAHEADSIZE 255
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
 
-#define DICTBITS 11
-#define LOOKBITS 5
+#define DICTBITS 15
+#define LOOKBITS 8
 using namespace std::chrono;
 
 uint8_t* filebuffer;
@@ -341,7 +341,9 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     auto duration = duration_cast<microseconds>(t2 - t1).count();
     if (duration > 1000)
         std::cout <<"4: "<< duration << std::endl;
-    nchar = match[match.size() - 1];
+    if(match.size()>LOOKAHEADSIZE){
+        match.pop_back();
+    }
     triplas.emplace_back(position, match, '\0', 1);
     matchSz = match.size();
 
@@ -352,7 +354,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
 
 void CompressFile()
 {
-    FILE *file = fopen("teste.txt", "rb");
+    FILE *file = fopen("bee.bmp", "rb");
     std::string bitString;
     filebuffer = 0;
     filesize = 0;
@@ -377,10 +379,10 @@ void CompressFile()
         look->updateLook(dict->matchSz);
         dict->updateDict(dict->matchSz);
     }
-    for (int i = 0; i < dict->triplas.size(); i++)
-    {
-        std::cout << dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " " << dict->triplas[i].nextChar << std::endl;
-    }
+    // for (int i = 0; i < dict->triplas.size(); i++)
+    // {
+    //     std::cout << dict->triplas[i].offset << " " << dict->triplas[i].match.size() << " " << dict->triplas[i].nextChar << std::endl;
+    // }
     std::cout << dict->triplas.size() << std::endl;
 
 
@@ -392,25 +394,34 @@ void CompressFile()
 */
     for (int i = 0; i < dict->triplas.size(); i++)
     {
-        if(dict->triplas[i].offset == 0){
-            /*nao teve match adiciona flag 0 e o nextchar*/
-            bitString+= "0";
-            bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
-        }else if((dict->triplas[i].match.size()*9 + 8) < (1+DICTBITS+LOOKBITS+8)){
-            /*representar a match com DICTSIZE+DICTBITS nao vale a pena*/
-            for (int j = 0; j < dict->triplas[i].match.size(); j++)
-            {
+        if(dict->triplas[i].flagFull == 0){
+            if(dict->triplas[i].offset == 0){
+                /*nao teve match adiciona flag 0 e o nextchar*/
+                bitString+= "0";
+                bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
+            }else if((dict->triplas[i].match.size()*9 + 8) < (1+DICTBITS+LOOKBITS+8)){
+                /*representar a match com DICTSIZE+DICTBITS nao vale a pena*/
+                for (int j = 0; j < dict->triplas[i].match.size(); j++)
+                {
+                    bitString += "0"; /*FLAG*/
+                    bitString.append(std::bitset<8>(dict->triplas[i].match[j]).to_string());
+                }
                 bitString += "0"; /*FLAG*/
-                bitString.append(std::bitset<8>(dict->triplas[i].match[j]).to_string());
+                bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
+            }else{
+                bitString += "1"; /*FLAG*/
+                bitString.append(std::bitset<LOOKBITS>(dict->triplas[i].match.size()).to_string());
+                bitString += "0"; /*FLAG*/
+                bitString.append(std::bitset<DICTBITS>(dict->triplas[i].offset).to_string());
+                bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
             }
-            bitString += "0"; /*FLAG*/
-            bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
         }else{
-            bitString += "1"; /*FLAG*/
-            bitString.append(std::bitset<DICTBITS>(dict->triplas[i].offset).to_string());
-            bitString.append(std::bitset<LOOKBITS>(dict->triplas[i].match.size()).to_string());
-            bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
+                bitString += "1"; /*FLAG*/
+                bitString.append(std::bitset<LOOKBITS>(dict->triplas[i].match.size()).to_string());
+                bitString += "1"; /*FLAG*/
+                bitString.append(std::bitset<8>(dict->triplas[i].nextChar).to_string());
         }
+        
     }
     while (bitString.size() % 8 != 0)
     {
