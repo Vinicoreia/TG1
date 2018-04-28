@@ -3,6 +3,12 @@
 
 #include <iostream>
 #include <string>
+/*Read file as string to the global InBuffer*/
+std::string readFileToBufferAsString(std::ifstream &fileIn);
+
+/*Write the bitString to a file*/
+void writeOutFile(std::string filenameOut, std::string bitString);
+
 
 /*Function to cast a char to binary using bitset*/
 std::string charToBin(char c);
