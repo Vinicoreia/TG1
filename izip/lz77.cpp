@@ -297,6 +297,7 @@ void readFileAsU8(std::string filenameIn){
     FILE *file = fopen(filenameIn.c_str(), "rb");
     inBuffer = 0;
     filesize = 0;
+    
     if (!file)
         return;
 
@@ -308,18 +309,7 @@ void readFileAsU8(std::string filenameIn){
     fclose(file);
 }
 
-void writeOutFile(std::string filenameOut){
-    std::ofstream output(filenameOut, std::ios::out | std::ios::binary);
-    unsigned long c;
-    while (!bitString.empty())
-    {
-        std::bitset<8> b(bitString);
-        c = b.to_ulong();
-        output.write(reinterpret_cast<const char *>(&c), 1);
-        bitString.erase(0, 8);
-    }
-    output.close();
-}
+
 void Encode(std::string filenameIn, std::string filenameOut)
 {
     /*READ FILE*/
@@ -342,7 +332,7 @@ void Encode(std::string filenameIn, std::string filenameOut)
         bitString += "0";
     }
 
-    writeOutFile(filenameOut);
+    writeOutFile(filenameOut, bitString);
     free(inBuffer);
     delete look;
     delete dict;
@@ -363,6 +353,7 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
     std::ifstream file(filenameIn, std::ios::in | std::ios::binary);
     std::string outBuffer = readFileToBufferAsString(file);
     file.close();
+
     std::string bitString;
 
     while (outBuffer.size() > 0)
