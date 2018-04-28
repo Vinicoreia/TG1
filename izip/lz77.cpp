@@ -348,7 +348,7 @@ void Encode(std::string filenameIn, std::string filenameOut)
     delete dict;
     return;
 }
-std::string readFileToBuffer(std::ifstream &fileIn)
+std::string readFileToBufferAsString(std::ifstream &fileIn)
 {
     return static_cast<std::stringstream const &>(std::stringstream() << fileIn.rdbuf()).str();
 }
@@ -361,20 +361,14 @@ std::string charToBin(char c)
 void decompressFile(std::string filenameIn, std::string filenameOut)
 {
     std::ifstream file(filenameIn, std::ios::in | std::ios::binary);
-    std::streampos start = file.tellg();
-    file.seekg(0, std::ios::end);
-    std::streampos end = file.tellg();
-    file.seekg(0, std::ios::beg);
-    std::vector<char> outBufer;
-    outBufer.resize(static_cast<size_t>(end - start));
-    file.read(&outBufer[0], outBufer.size());
+    std::string outBuffer = readFileToBufferAsString(file);
     file.close();
     std::string bitString;
 
-    while (outBufer.size() > 0)
+    while (outBuffer.size() > 0)
     {
-        bitString.append(charToBin(outBufer.at(0)));
-        outBufer.erase(outBufer.begin());
+        bitString.append(charToBin(outBuffer.at(0)));
+        outBuffer.erase(outBuffer.begin());
     }
     std::string bitChar;
     std::string lookaheadBits;
@@ -436,7 +430,7 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
 }
 
 int main(){
-    Encode("bee.bmp", "d.bin");
-    // decompressFile("d.bin", "B.bmp");
+    // Encode("bee.bmp", "d.bin");
+    decompressFile("d.bin", "C.bmp");
     return 0;
 }
