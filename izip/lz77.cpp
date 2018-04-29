@@ -10,6 +10,7 @@
 #include <sstream>
 #include <chrono>
 #include <algorithm>
+#include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -99,6 +100,7 @@ std::pair<uint8_t *, int> boyer_moore(uint8_t *string, uint32_t stringlen, uint8
     return std::make_pair(string, -1);
 }
 
+
 void Dictionary::updateDict(size_t offset){
     if(dpe >=filesize)
         return;
@@ -164,7 +166,7 @@ void writeLZ77BitString(int offset, std::string match, char nextChar)
 
 Dictionary::Dictionary(){
     dpe += 1;
-    writeLZ77BitString(0, "", inBuffer[0]);
+    writeLZ77BitString(0, "", u8Buffer[0]);
 };
 
 
@@ -177,12 +179,19 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     char nchar;
     std::pair<uint8_t *, int> p;
     
-    p = boyer_moore(inBuffer + dpb, dpe - dpb, inBuffer + lpb, lpe-lpb);
+    if(lpe-lpb==1){
+        triplas.emplace_back(0, "", u8Buffer[lpb], 0);
+        writeLZ77BitString(0, "", u8Buffer[lpb]);
+        matchSz = 1;
+        return;        
+    }
+
+    p = boyer_moore(u8Buffer + dpb, dpe - dpb, u8Buffer + lpb, lpe-lpb);
     position = (dpe-(dpb+ p.second));    
 
     if (p.second != -1)
     {
-        match.append((const char*)(inBuffer+dpb+p.second), lpe-lpb);
+        match.append((const char*)(u8Buffer+dpb+p.second), lpe-lpb);
         nchar = match[match.size() - 1];
         match.pop_back();
         triplas.emplace_back(position, match, nchar, 0);
@@ -192,14 +201,14 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     }
 
     position = -1;
-    match += inBuffer[lpb];
+    match += u8Buffer[lpb];
     
     while(i<lpe-lpb){
-        p = boyer_moore(inBuffer+dpb, dpe-dpb, inBuffer+lpb, i);   
+        p = boyer_moore(u8Buffer+dpb, dpe-dpb, u8Buffer+lpb, i);   
         if(p.second==-1){
             if(i==1){
-                triplas.emplace_back(0, "", inBuffer[lpb], 0);
-                writeLZ77BitString(0, "", inBuffer[lpb]);
+                triplas.emplace_back(0, "", u8Buffer[lpb], 0);
+                writeLZ77BitString(0, "", u8Buffer[lpb]);
                 matchSz = 1;
                 return;
             }else{
@@ -214,15 +223,15 @@ void Dictionary::findBestMatch(int lpb, int lpe)
         }else{
             /*ve se tem mais match*/
 
-            match += inBuffer[lpb + i];
+            match += u8Buffer[lpb + i];
             /*circbuffer*/
             int circbuffer = dpb+p.second+i;
             if(circbuffer == dpe){
                 circbuffer -= (dpe-dpb);
             }
             i++;
-            while(inBuffer[circbuffer]==match[i-1] and i<lpe-lpb){
-                match += inBuffer[lpb + i];
+            while(u8Buffer[circbuffer]==match[i-1] and i<lpe-lpb){
+                match += u8Buffer[lpb + i];
                 i++;
                 circbuffer++;
                 if (circbuffer == dpe)
@@ -232,6 +241,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
             }
             }
             position = (dpe - (dpb + p.second));
+            
     }
 
     
@@ -252,7 +262,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
 void Encode(std::string filenameIn, std::string filenameOut)
 {
     /*READ FILE*/
-    inBuffer = readFileAsU8(filenameIn);
+    readFileAsU8(filenameIn);
     /*Create virtual structures*/
 
     /*LZ77*/
@@ -264,15 +274,8 @@ void Encode(std::string filenameIn, std::string filenameOut)
         look->updateLook(dict->matchSz);
         dict->updateDict(dict->matchSz);
     }
-
-    /*Finish bitString*/
-    while (bitString.size() % 8 != 0)
-    {
-        bitString += "0";
-    }
-
-    writeOutFile(filenameOut);
-    free(inBuffer);
+    writeEncodedFile(filenameOut);/* i might put this in the main later*/
+    free(u8Buffer);
     delete look;
     delete dict;
     return;
@@ -280,16 +283,13 @@ void Encode(std::string filenameIn, std::string filenameOut)
 
 void decompressFile(std::string filenameIn, std::string filenameOut)
 {
-    std::ifstream file(filenameIn, std::ios::in | std::ios::binary);
-    std::string outBuffer = readFileToBufferAsString(file);
-    file.close();
+    readFileToBufferAsString(filenameIn);
+    bitString.clear();
 
-    std::string bitString;
-
-    while (outBuffer.size() > 0)
+    while (strBuffer.size() > 0)
     {
-        bitString.append(charToBin(outBuffer.at(0)));
-        outBuffer.erase(outBuffer.begin());
+        bitString.append(charToBin(strBuffer.at(0)));
+        strBuffer.erase(strBuffer.begin());
     }
     std::string bitChar;
     std::string lookaheadBits;
@@ -343,15 +343,15 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
         }
     }
 
-    std::ofstream output(filenameOut, std::ios::out | std::ios::binary);
-    output << outString; //WRITE TO FILE
-    std::cout << "Final filesize after decompressing: " << outString.size() << " bytes" << std::endl;
-
-    output.close();
+    writeDecodedFile(filenameOut, outString);
 }
 
-int main(){
-    Encode("bee.bmp", "d.bin");
-    // decompressFile("d.bin", "C.bmp");
+int main(int argc, char *argv[])
+{
+    if(std::string(argv[1])== "1"){
+     Encode(argv[2], argv[3]);
+    }else if(std::string(argv[1])== "2"){
+    decompressFile(argv[2], argv[3]);
+    }
     return 0;
 }
