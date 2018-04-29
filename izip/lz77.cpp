@@ -6,7 +6,6 @@
 #include <deque>
 #include <unordered_map>
 #include "lz77.h"
-#include <bitset>
 #include <sstream>
 #include <chrono>
 #include <algorithm>
@@ -16,6 +15,10 @@
 
 using namespace std::chrono;
 
+int DICTSIZE = 0;
+int LOOKAHEADSIZE = 0;
+int DICTBITS = 0;
+int LOOKBITS = 0;
 /*O LZ77 vai receber os dados já tratados, cada .cpp deve funcionar atomicamente*/
 #define ALPHABET_LEN 256
 #define NOT_FOUND patlen
@@ -23,9 +26,11 @@ using namespace std::chrono;
 
 void make_delta1(int *delta1, uint8_t *pat, int32_t patlen) {
     int i;
+    /* mark all as NOT FOUND*/
     for (i=0; i < ALPHABET_LEN; i++) {
         delta1[i] = NOT_FOUND;
     }
+    /* mark THE ONES THAT ARE PART OF THE PATTERN */
     for (i=0; i < patlen-1; i++) {
         delta1[pat[i]] = patlen-1 - i;
     }
@@ -138,29 +143,29 @@ Lookahead::Lookahead(int filesize){
     }
 };
 
-void writeLZ77BitString(int offset, std::string match, char nextChar)
+void writeLZ77BitString(int offset, std::string match, uint8_t nextChar)
 {
     if (offset == 0 or match.size() == 0)
     {
         bitString += "0";
-        bitString.append(std::bitset<8>(nextChar).to_string());
+        bitString.append(decimalToBitString(nextChar, 8));
     }
     else if ((match.size() * 9 + 8) < (1 + DICTBITS + LOOKBITS + 8))
     {
         for (int j = 0; j < match.size(); j++)
         {
             bitString += "0"; /*FLAG*/
-            bitString.append(std::bitset<8>(match[j]).to_string());
+            bitString.append(decimalToBitString((uint8_t) match[j], 8));
         }
         bitString += "0"; /*FLAG*/
-        bitString.append(std::bitset<8>(nextChar).to_string());
+        bitString.append(decimalToBitString(nextChar, 8));
     }
     else
     {
         bitString += "1"; /*FLAG*/
-        bitString.append(std::bitset<DICTBITS>(offset).to_string());
-        bitString.append(std::bitset<LOOKBITS>(match.size()).to_string());
-        bitString.append(std::bitset<8>(nextChar).to_string());
+        bitString.append(decimalToBitString(offset, DICTBITS));
+        bitString.append(decimalToBitString(match.size(), LOOKBITS));
+        bitString.append(decimalToBitString(nextChar, 8));
     }
 }
 
@@ -176,7 +181,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     int i =1;
     std::string match;
     int position=0;
-    char nchar;
+    uint8_t nchar;
     std::pair<uint8_t *, int> p;
     
     if(lpe-lpb==1){
@@ -348,8 +353,14 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
 
 int main(int argc, char *argv[])
 {
-    if(std::string(argv[1])== "1"){
-     Encode(argv[2], argv[3]);
+    DICTSIZE = stoi(std::string(argv[4]));
+    DICTBITS = floor(log2(DICTSIZE) + 1);
+    LOOKAHEADSIZE = stoi(std::string(argv[5]));
+    LOOKBITS = floor(log2(LOOKAHEADSIZE) + 1);
+    
+    if (std::string(argv[1]) == "1")
+    {
+        Encode(argv[2], argv[3]);
     }else if(std::string(argv[1])== "2"){
     decompressFile(argv[2], argv[3]);
     }

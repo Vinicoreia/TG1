@@ -2,12 +2,6 @@
 #define IZIP_LZ77_H_
 #include "util.h"
 
-#define DICTSIZE 32767
-#define LOOKAHEADSIZE 255
-#define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
-#define DICTBITS 15
-#define LOOKBITS 8
-
 struct Data
 {
     size_t offset;
