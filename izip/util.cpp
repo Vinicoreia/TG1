@@ -2,9 +2,10 @@
 #include <bitset>
 #include <fstream>
 #include <sstream>
-
+#include <vector>
 std::string bitString;
 std::string strBuffer;
+std::vector<char> vecBuffer;
 uint8_t* u8Buffer=0;
 size_t filesize=0;
 
@@ -17,10 +18,23 @@ void readFileToBufferAsString(std::string filename)
     file.close();
 }
 
+void readFileAsVector(std::string filename){
+    char c;
+    std::ifstream file(filename, std::ios::in | std::ios::binary);
+    getFileSize(filename);
+    std::cout << "Initial Size: " << filesize << " bytes" << std::endl;    
+    while (file.get(c))
+    {
+       vecBuffer.push_back(c);
+    }
+    file.close();
+}
+
+
 void readFileAsU8(std::string filenameIn){
     FILE *file = fopen(filenameIn.c_str(), "rb");
     if (!file)
-        return;
+        exit(1);
 
     getFileSize(filenameIn);
     std::cout << "Initial Size: " << filesize << " bytes" << std::endl;        
