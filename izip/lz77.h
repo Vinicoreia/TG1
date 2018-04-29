@@ -1,6 +1,7 @@
 #ifndef IZIP_LZ77_H_
 #define IZIP_LZ77_H_
 #include "util.h"
+#include <deque>
 
 /*OBS: When encoding or decoding the DICTIONARY size and the LOOKAHEAD size must be passed*/
 

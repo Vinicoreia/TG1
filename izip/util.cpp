@@ -3,6 +3,8 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+
+/*GLOBAL VARIABLES*/
 std::string bitString;
 std::string strBuffer;
 std::vector<char> vecBuffer;

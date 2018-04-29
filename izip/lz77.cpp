@@ -6,18 +6,11 @@
 #include <deque>
 #include <unordered_map>
 #include "lz77.h"
-#include <sstream>
-#include <chrono>
-#include <algorithm>
-#include <string.h>
-#include <stdint.h>
-#include <stdlib.h>
 
 #define ALPHABET_LEN 256
 #define NOT_FOUND patlen
 #define max(a, b) ((a < b) ? b : a)
 
-using namespace std::chrono;
 
 int DICTSIZE = 0;
 int LOOKAHEADSIZE = 0;
