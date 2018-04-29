@@ -264,7 +264,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     return;
 }
 
-void Encode(std::string filenameIn, std::string filenameOut)
+void EncodeLZ77(std::string filenameIn, std::string filenameOut)
 {
     /*READ FILE*/
     readFileAsU8(filenameIn);
@@ -286,7 +286,7 @@ void Encode(std::string filenameIn, std::string filenameOut)
     return;
 }
 
-void decompressFile(std::string filenameIn, std::string filenameOut)
+void DecodeLZ77(std::string filenameIn, std::string filenameOut)
 {
     readFileToBufferAsString(filenameIn);
     bitString.clear();
@@ -360,9 +360,9 @@ int main(int argc, char *argv[])
     
     if (std::string(argv[1]) == "1")
     {
-        Encode(argv[2], argv[3]);
+        EncodeLZ77(argv[2], argv[3]);
     }else if(std::string(argv[1])== "2"){
-    decompressFile(argv[2], argv[3]);
+    DecodeLZ77(argv[2], argv[3]);
     }
     return 0;
 }
