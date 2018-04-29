@@ -13,6 +13,9 @@ extern size_t filesize;
 /*Read file as string to the global u8Buffer*/
 void readFileToBufferAsString(std::string filename);
 
+/* Cast a integer to binary and returns the bitString corresponding*/
+std::string decimalToBitString(unsigned int n, unsigned int len);
+
 /* Read file as a uint8_t* */
 void readFileAsU8(std::string filenameIn);
 

@@ -89,3 +89,17 @@ void getFileSize(std::string filename)
     stat( filename.c_str(), &filestatus );
     filesize = filestatus.st_size;
 }
+
+std::string decimalToBitString(unsigned int n, unsigned int len)
+{
+    std::string r;
+    while (n != 0)
+    {
+        r = (n % 2 == 0 ? "0" : "1") + r;
+        n /= 2;
+    }
+    while(r.size()<len){
+        r.insert(0, "0");
+    }
+    return r;
+}
