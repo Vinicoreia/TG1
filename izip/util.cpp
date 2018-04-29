@@ -72,6 +72,22 @@ int writeEncodedFile(std::string fileOutName)
     }
 }
 
+int writeStringToFile(std::string fileOutName, std::string outString)
+{
+    std::ofstream fileOut(fileOutName, std::ios::out | std::ios::binary);
+
+    if (fileOut.is_open())
+    {
+        fileOut << outString;
+        fileOut.close();
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
 std::string charToBin(char c)
 {
     return std::bitset<8>(c).to_string();
