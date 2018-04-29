@@ -3,7 +3,8 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-
+#include <unordered_map>
+#include <algorithm>
 /*GLOBAL VARIABLES*/
 std::string bitString;
 std::string strBuffer;
@@ -120,4 +121,30 @@ std::string decimalToBitString(unsigned int n, unsigned int len)
         r.insert(0, "0");
     }
     return r;
+}
+
+
+std::vector<std::pair<char, long long>> getFrequency(std::string buffer)
+{
+    
+    std::unordered_map<char, long long> mapSymbAmount;/*-*/
+    std::vector<std::pair<char, long long>> pairSymbProb; /*-*/
+    
+    for (long long i = 0; i < buffer.length(); i++)
+    {
+        mapSymbAmount[buffer[i]] += 1;
+    }
+
+    for (std::unordered_map<char, long long>::iterator it = mapSymbAmount.begin(); it != mapSymbAmount.end(); ++it)
+    {
+        pairSymbProb.push_back(std::make_pair((char)(it->first), (long long)(it->second)));
+    }
+
+    sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
+        return left.second < right.second;
+    });
+    sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
+        return left.first < right.first;
+    });
+    return pairSymbProb;
 }
