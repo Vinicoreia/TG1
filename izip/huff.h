@@ -1,6 +1,7 @@
 #ifndef IZIP_HUFFMAN_H_
 #define IZIP_HUFFMAN_H_
 #include "util.h"
+
 struct node
 {
     long long key_value;
