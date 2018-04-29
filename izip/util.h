@@ -3,11 +3,21 @@
 
 #include <iostream>
 #include <string>
+
+/* Frequently used  streams*/
+extern std::string bitString;
+extern std::string outBuffer;
+extern uint8_t* inBuffer;
+extern size_t filesize;
+
 /*Read file as string to the global InBuffer*/
 std::string readFileToBufferAsString(std::ifstream &fileIn);
 
+/* Read file as a uint8_t* */
+uint8_t* readFileAsU8(std::string filenameIn);
+
 /*Write the bitString to a file*/
-void writeOutFile(std::string filenameOut, std::string bitString);
+void writeOutFile(std::string filenameOut);
 
 
 /*Function to cast a char to binary using bitset*/
