@@ -22,6 +22,7 @@ void readFileAsVector(std::string filename){
     char c;
     std::ifstream file(filename, std::ios::in | std::ios::binary);
     getFileSize(filename);
+    vecBuffer.reserve(filesize);
     std::cout << "Initial Size: " << filesize << " bytes" << std::endl;    
     while (file.get(c))
     {
