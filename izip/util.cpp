@@ -3,9 +3,28 @@
 #include <fstream>
 #include <sstream>
 
+std::string bitString;
+std::string outBuffer;
+uint8_t* inBuffer=0;
+size_t filesize=0;
+
 std::string readFileToBufferAsString(std::ifstream &fileIn)
 {
     return static_cast<std::stringstream const &>(std::stringstream() << fileIn.rdbuf()).str();
+}
+
+uint8_t* readFileAsU8(std::string filenameIn){
+    FILE *file = fopen(filenameIn.c_str(), "rb");
+    if (!file)
+        return 0;
+
+    fseek(file, 0, SEEK_END);
+    filesize = ftell(file);
+    rewind(file);
+    inBuffer = (unsigned char *)malloc(filesize);
+    fread(inBuffer, 1, filesize, file);
+    fclose(file);
+    return inBuffer;
 }
 
 std::string charToBin(char c)
@@ -13,7 +32,7 @@ std::string charToBin(char c)
     return std::bitset<8>(c).to_string();
 }
 
-void writeOutFile(std::string filenameOut, std::string bitString){
+void writeOutFile(std::string filenameOut){
     std::ofstream output(filenameOut, std::ios::out | std::ios::binary);
     unsigned long c;
     while (!bitString.empty())
@@ -25,6 +44,7 @@ void writeOutFile(std::string filenameOut, std::string bitString){
     }
     output.close();
 }
+
 unsigned long long getFileSize(std::ifstream &fileIn)
 {
     unsigned long long filesize = fileIn.tellg();

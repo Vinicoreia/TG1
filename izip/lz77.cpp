@@ -12,17 +12,9 @@
 #include <algorithm>
 #include <stdint.h>
 #include <stdlib.h>
-#define DICTSIZE 32767
-#define LOOKAHEADSIZE 255
-#define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
 
-#define DICTBITS 15
-#define LOOKBITS 8
 using namespace std::chrono;
 
-uint8_t* inBuffer;
-std::string bitString;
-int filesize;
 /*O LZ77 vai receber os dados já tratados, cada .cpp deve funcionar atomicamente*/
 #define ALPHABET_LEN 256
 #define NOT_FOUND patlen
@@ -106,28 +98,6 @@ std::pair<uint8_t *, int> boyer_moore(uint8_t *string, uint32_t stringlen, uint8
     free(delta2);
     return std::make_pair(string, -1);
 }
-struct Data
-{
-    size_t offset;
-    std::string match;
-    uint8_t nextChar;
-    size_t flagFull= 0;
-    Data(size_t offset, std::string match, uint8_t nextChar, size_t flagFull) : offset(offset), match(match), nextChar(nextChar), flagFull(flagFull) {}
-};
-
-class Dictionary{
-    /*The dictionary is responsible to get the biggest match in the dictionary*/
-    public:
-        std::string dictionary;
-        Dictionary();
-        void updateDict(size_t offset);
-        size_t matchSz = 0;
-        size_t dpb = 0; /*Dictionary pointer to begin of Dictionary*/
-        size_t dpe = 0; /*Dictionary pointer to end of Dictionary*/
-        void findBestMatch(int lpe, int lpb);/*This function has to return the Data to the lookahead*/
-        int P[DICTSIZE + 1][LOOKAHEADSIZE], stp;
-        std::deque<Data> triplas;
-};
 
 void Dictionary::updateDict(size_t offset){
     if(dpe >=filesize)
@@ -137,15 +107,7 @@ void Dictionary::updateDict(size_t offset){
         dpb = dpe-DICTSIZE;
     }
 }
-class Lookahead{
-    
-    public:
-        std::string lookahead;
-        Lookahead(int filesize);
-        size_t lpb=0; /*lookahead pointer to begin of lookahead*/
-        size_t lpe = 0; /*lookahead pointer to end of lookahead*/
-        void updateLook(size_t offset);
-};
+
 void Lookahead::updateLook(size_t offset)
 {
     lpe += offset;
@@ -174,7 +136,7 @@ Lookahead::Lookahead(int filesize){
     }
 };
 
-void writeBitString(int offset, std::string match, char nextChar)
+void writeLZ77BitString(int offset, std::string match, char nextChar)
 {
     if (offset == 0 or match.size() == 0)
     {
@@ -202,39 +164,42 @@ void writeBitString(int offset, std::string match, char nextChar)
 
 Dictionary::Dictionary(){
     dpe += 1;
-    writeBitString(0, "", inBuffer[0]);
+    writeLZ77BitString(0, "", inBuffer[0]);
 };
 
 
 
 void Dictionary::findBestMatch(int lpb, int lpe)
 {
-    matchSz = 0;
     int i =1;
     std::string match;
     int position=0;
     char nchar;
     std::pair<uint8_t *, int> p;
+    
     p = boyer_moore(inBuffer + dpb, dpe - dpb, inBuffer + lpb, lpe-lpb);
     position = (dpe-(dpb+ p.second));    
+
     if (p.second != -1)
     {
         match.append((const char*)(inBuffer+dpb+p.second), lpe-lpb);
         nchar = match[match.size() - 1];
         match.pop_back();
         triplas.emplace_back(position, match, nchar, 0);
-        writeBitString(position, match, nchar);
+        writeLZ77BitString(position, match, nchar);
         matchSz = match.size()+1;
         return;
     }
+
     position = -1;
     match += inBuffer[lpb];
+    
     while(i<lpe-lpb){
         p = boyer_moore(inBuffer+dpb, dpe-dpb, inBuffer+lpb, i);   
         if(p.second==-1){
             if(i==1){
                 triplas.emplace_back(0, "", inBuffer[lpb], 0);
-                writeBitString(0, "", inBuffer[lpb]);
+                writeLZ77BitString(0, "", inBuffer[lpb]);
                 matchSz = 1;
                 return;
             }else{
@@ -242,7 +207,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
                 nchar = match[match.size() - 1];
                 match.pop_back();
                 triplas.emplace_back(position, match, nchar, 0);
-                writeBitString(position, match, nchar);
+                writeLZ77BitString(position, match, nchar);
                 matchSz = match.size() + 1;
                 return;
             }
@@ -267,15 +232,6 @@ void Dictionary::findBestMatch(int lpb, int lpe)
             }
             }
             position = (dpe - (dpb + p.second));
-            if (match.size() == lpe - lpb and dictionary[dictionary.size() - 1] == match[match.size() - 1])
-            {
-                nchar = match[match.size() - 1];
-                match.pop_back();
-                triplas.emplace_back(position, match, nchar, 0);
-                writeBitString(position, match, nchar);
-                matchSz = match.size() + 1;
-                return;
-        }
     }
 
     
@@ -285,7 +241,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     nchar = match[match.size() - 1];
     match.pop_back();
     triplas.emplace_back(position, match, nchar, 0);
-    writeBitString(position, match, nchar);
+    writeLZ77BitString(position, match, nchar);
     matchSz = match.size()+1;
 
     /*Se achar aumenta a match e procura novamente a partir da posição q achou*/
@@ -293,27 +249,10 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     return;
 }
 
-void readFileAsU8(std::string filenameIn){
-    FILE *file = fopen(filenameIn.c_str(), "rb");
-    inBuffer = 0;
-    filesize = 0;
-    
-    if (!file)
-        return;
-
-    fseek(file, 0, SEEK_END);
-    filesize = ftell(file);
-    rewind(file);
-    inBuffer = (unsigned char *)malloc(filesize);
-    fread(inBuffer, 1, filesize, file);
-    fclose(file);
-}
-
-
 void Encode(std::string filenameIn, std::string filenameOut)
 {
     /*READ FILE*/
-    readFileAsU8(filenameIn);
+    inBuffer = readFileAsU8(filenameIn);
     /*Create virtual structures*/
 
     /*LZ77*/
@@ -332,20 +271,11 @@ void Encode(std::string filenameIn, std::string filenameOut)
         bitString += "0";
     }
 
-    writeOutFile(filenameOut, bitString);
+    writeOutFile(filenameOut);
     free(inBuffer);
     delete look;
     delete dict;
     return;
-}
-std::string readFileToBufferAsString(std::ifstream &fileIn)
-{
-    return static_cast<std::stringstream const &>(std::stringstream() << fileIn.rdbuf()).str();
-}
-
-std::string charToBin(char c)
-{
-    return std::bitset<8>(c).to_string();
 }
 
 void decompressFile(std::string filenameIn, std::string filenameOut)
@@ -421,7 +351,7 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
 }
 
 int main(){
-    // Encode("bee.bmp", "d.bin");
-    decompressFile("d.bin", "C.bmp");
+    Encode("bee.bmp", "d.bin");
+    // decompressFile("d.bin", "C.bmp");
     return 0;
 }
