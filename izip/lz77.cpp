@@ -13,24 +13,23 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define ALPHABET_LEN 256
+#define NOT_FOUND patlen
+#define max(a, b) ((a < b) ? b : a)
+
 using namespace std::chrono;
 
 int DICTSIZE = 0;
 int LOOKAHEADSIZE = 0;
 int DICTBITS = 0;
 int LOOKBITS = 0;
-/*O LZ77 vai receber os dados já tratados, cada .cpp deve funcionar atomicamente*/
-#define ALPHABET_LEN 256
-#define NOT_FOUND patlen
-#define max(a, b) ((a < b) ? b : a)
+
 
 void make_delta1(int *delta1, uint8_t *pat, int32_t patlen) {
     int i;
-    /* mark all as NOT FOUND*/
     for (i=0; i < ALPHABET_LEN; i++) {
         delta1[i] = NOT_FOUND;
     }
-    /* mark THE ONES THAT ARE PART OF THE PATTERN */
     for (i=0; i < patlen-1; i++) {
         delta1[pat[i]] = patlen-1 - i;
     }
@@ -77,7 +76,6 @@ std::pair<uint8_t *, int> boyer_moore(uint8_t *string, uint32_t stringlen, uint8
     make_delta1(delta1, pat, patlen);
     make_delta2(delta2, pat, patlen);
 
-    // The empty pattern must be considered specially
     if (patlen == 0)
     {
         free(delta2);
@@ -226,10 +224,8 @@ void Dictionary::findBestMatch(int lpb, int lpe)
                 return;
             }
         }else{
-            /*ve se tem mais match*/
 
             match += u8Buffer[lpb + i];
-            /*circbuffer*/
             int circbuffer = dpb+p.second+i;
             if(circbuffer == dpe){
                 circbuffer -= (dpe-dpb);
@@ -258,14 +254,13 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     triplas.emplace_back(position, match, nchar, 0);
     writeLZ77BitString(position, match, nchar);
     matchSz = match.size()+1;
-
-    /*Se achar aumenta a match e procura novamente a partir da posição q achou*/
-    /*Se nao achar retorna a tripla vazia*/
     return;
 }
 
-void EncodeLZ77(std::string filenameIn, std::string filenameOut)
+void EncodeLZ77(std::string filenameIn, std::string filenameOut, int encode)
 {
+
+    /*Still need to modify this to write the buffer as triples or as a binary*/
     /*READ FILE*/
     readFileAsU8(filenameIn);
     /*Create virtual structures*/
@@ -279,7 +274,16 @@ void EncodeLZ77(std::string filenameIn, std::string filenameOut)
         look->updateLook(dict->matchSz);
         dict->updateDict(dict->matchSz);
     }
-    writeEncodedFile(filenameOut);/* i might put this in the main later*/
+    if(encode == 0){
+        writeEncodedFile(filenameOut);
+    }else if(encode ==1){
+        strBuffer.clear();
+        for(int i =0; i<dict->triplas.size(); i++){
+            strBuffer.append(std::to_string(dict->triplas[i].offset));
+            strBuffer.append(std::to_string(dict->triplas[i].match.size()));
+            strBuffer += dict->triplas[i].nextChar;
+        }
+    }
     free(u8Buffer);
     delete look;
     delete dict;
@@ -360,9 +364,9 @@ int main(int argc, char *argv[])
     
     if (std::string(argv[1]) == "1")
     {
-        EncodeLZ77(argv[2], argv[3]);
+        EncodeLZ77(argv[2], argv[3],1);
     }else if(std::string(argv[1])== "2"){
-    DecodeLZ77(argv[2], argv[3]);
+        DecodeLZ77(argv[2], argv[3]);
     }
     return 0;
 }
