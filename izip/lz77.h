@@ -1,6 +1,7 @@
 #ifndef IZIP_LZ77_H_
 #define IZIP_LZ77_H_
 #include "util.h"
+
 #define DICTSIZE 32767
 #define LOOKAHEADSIZE 255
 #define WINDOWSIZE LOOKAHEADSIZE + DICTSIZE
