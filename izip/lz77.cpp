@@ -178,6 +178,7 @@ void writeLZ77BitString(int offset, std::string match, uint8_t nextChar)
 Dictionary::Dictionary(){
     dpe += 1;
     writeLZ77BitString(0, "", u8Buffer[0]);
+    triplas.emplace_back(0, "", u8Buffer[0],0);
 };
 
 

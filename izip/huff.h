@@ -1,7 +1,9 @@
 #ifndef IZIP_HUFFMAN_H_
 #define IZIP_HUFFMAN_H_
 #include "util.h"
-
+#include <string>
+#include <unordered_map>
+#include <vector>
 struct nodeChar
 {
     long long key_value;
