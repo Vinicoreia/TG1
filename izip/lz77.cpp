@@ -304,14 +304,9 @@ void EncodeLZ77(std::string filenameIn, std::string filenameOut, int encode)
 void DecodeLZ77(std::string filenameIn, std::string filenameOut)
 {
     getWindowSize();
-    readFileToBufferAsString(filenameIn);
     bitString.clear();
-
-    while (strBuffer.size() > 0)
-    {
-        bitString.append(charToBin(strBuffer.at(0)));
-        strBuffer.erase(strBuffer.begin());
-    }
+    readFileAsBinaryString(filenameIn);
+    
     std::string bitChar;
     std::string lookaheadBits;
     std::string dictBits;

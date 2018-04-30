@@ -13,7 +13,7 @@ extern uint8_t* u8Buffer;
 extern size_t filesize;
 /*Read file as string to the global u8Buffer*/
 void readFileToBufferAsString(std::string filename);
-
+void readFileAsBinaryString(std::string filename);
 /*writes the given string to a file*/
 int writeStringToFile(std::string fileOutName, std::string outString);
 
@@ -26,7 +26,6 @@ void readFileAsU8(std::string filenameIn);
 /*Write the bitString to a file*/
 int writeEncodedFile(std::string fileOutName);
 void writeDecodedFile(std::string filenameOut, std::string outString);
-
 
 /*Function to cast a char to binary using bitset*/
 std::string charToBin(char c);

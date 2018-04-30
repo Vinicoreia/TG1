@@ -47,7 +47,15 @@ void readFileAsU8(std::string filenameIn){
     fclose(file);
 }
 
-
+void readFileAsBinaryString(std::string filename){
+    readFileToBufferAsString(filename);
+    for (int i = 0; i < strBuffer.size(); i++)
+    {
+        std::bitset<8> bin(strBuffer.c_str()[i]);
+        bitString += bin.to_string();
+    }
+    strBuffer.clear();
+}
 int writeEncodedFile(std::string fileOutName)
 {
     /*This is made to make sure the binaryString is multiple of 8*/
