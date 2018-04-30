@@ -27,5 +27,10 @@ struct compare
         return (leftNode->key_value > rightNode->key_value);
     }
 };
-
+void mapCodes(struct node *root, int len, std::vector<std::pair<char, int>> &pairSymbCodeLength);
+void calcCodeLengths(std::vector<std::pair<char, int>> &pairSymbCodeLength, std::vector<int> &codeLengths);
+void buildCodes(std::vector<std::pair<char, int>> &pairSymbCodeLength, std::vector<int> &codeLengths, std::unordered_map<char, std::pair<std::string, int>> &mapSymbCodeLength);
+std::string writeHuffmanBitString(std::vector<std::pair<char, int>> &pairSymbCodeLength, std::vector<int> &codeLengths, std::unordered_map<char, std::pair<std::string, int>> &mapSymbCodeLength);
+void huffmanDecode(std::string fileOutName);
+void HuffmanEncode(std::string fileOutName, int encode);
 #endif
