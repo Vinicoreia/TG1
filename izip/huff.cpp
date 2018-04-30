@@ -124,10 +124,11 @@ std::string writeHuffmanBitString(std::vector<std::pair<char, int>> &pairSymbCod
 }
 
 
-void huffmanDecode()
+void huffmanDecode(std::string fileOutName)
 {
+    bitString.clear();
     std::string decoding;
-    std::string decoded;
+    std::string outString;
     std::unordered_map<std::string, char> mapCodeSymb;
     char c;
     int strPointer = 3;
@@ -159,6 +160,7 @@ void huffmanDecode()
             strPointer += 8;
         }
     }
+
     buildCodes(pairSymbCodeLength, codeLengths, mapSymbCodeLength); /*atribui o codigo canonico*/
 
     for (std::unordered_map<char, std::pair<std::string, int>>::iterator i = mapSymbCodeLength.begin(); i != mapSymbCodeLength.end(); ++i)
@@ -172,25 +174,27 @@ void huffmanDecode()
         decoding += *it;
         try
         {
-            decoded += mapCodeSymb.at(decoding);
+            outString += mapCodeSymb.at(decoding);
             decoding.clear();
         }
         catch (const std::out_of_range &e)
         {
         }
     }
-    std::ofstream output("teste2.txt", std::ios::out | std::ios::binary);
-    output << decoded; //WRITE TO FILE
-    output.close();
+    /* Falta escrever o output*/
+    writeDecodedFile(fileOutName, outString);
 }
 
-void HuffmanEncode(){
+void HuffmanEncode(std::string fileOutName, int encode)
+{
+    bitString.clear();
+
     std::vector<std::pair<char, long long>> pairSymbProb = getFrequency(strBuffer);
     std::priority_queue<node *, std::vector<node *>, compare> heap;
     std::vector<std::pair<char, int>> pairSymbCodeLength; /* maps the codeLength to each symbol*/
     std::vector<int> codeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; /*max CodeLength = 30*/
-    struct node *nLeft, *nRight, *nTop;
     std::unordered_map<char, std::pair<std::string, int>> mapSymbCodeLength;
+    struct node *nLeft, *nRight, *nTop;
 
     for(int i=0; i< pairSymbProb.size(); i++){
         heap.push(new node(pairSymbProb[i].first, pairSymbProb[i].second, true));
@@ -212,11 +216,10 @@ void HuffmanEncode(){
     buildCodes(pairSymbCodeLength, codeLengths,mapSymbCodeLength); /*atribui o codigo canonico*/
 
     bitString = writeHuffmanBitString(pairSymbCodeLength, codeLengths,mapSymbCodeLength);
-    std::cout<<bitString.size()/8;
-}
-
-int main(){
-    readFileToBufferAsString("andrew-lang-theredfairybook.txt");
-    HuffmanEncode();
-    huffmanDecode();
+    if(encode == 0){
+        /*writes to file*/
+        writeEncodedFile(fileOutName);
+    }else{
+        std::cout<<bitString.size()/8;
+    }
 }

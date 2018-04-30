@@ -17,6 +17,21 @@ int LOOKAHEADSIZE = 0;
 int DICTBITS = 0;
 int LOOKBITS = 0;
 
+void getWindowSize(){
+    std::string userInput;
+    std::cout << "Type the Dictionary Size and the Lookahead Size"
+              << "\n";
+    std::cout << "Dictionary Size: ";
+    getline(std::cin, userInput);
+    DICTSIZE = std::stoi(userInput);
+    std::cout << "Lookahead Size: ";
+    userInput.clear();
+    getline(std::cin, userInput);
+    LOOKAHEADSIZE = std::stoi(userInput);
+
+    DICTBITS = floor(log2(DICTSIZE) + 1);
+    LOOKBITS = floor(log2(LOOKAHEADSIZE) + 1);
+}
 
 void make_delta1(int *delta1, uint8_t *pat, int32_t patlen) {
     int i;
@@ -252,8 +267,10 @@ void Dictionary::findBestMatch(int lpb, int lpe)
 
 void EncodeLZ77(std::string filenameIn, std::string filenameOut, int encode)
 {
+   getWindowSize();
 
-    /*Still need to modify this to write the buffer as triples or as a binary*/
+    bitString.clear();
+
     /*READ FILE*/
     readFileAsU8(filenameIn);
     /*Create virtual structures*/
@@ -270,6 +287,7 @@ void EncodeLZ77(std::string filenameIn, std::string filenameOut, int encode)
     if(encode == 0){
         writeEncodedFile(filenameOut);
     }else if(encode ==1){
+        /*Write triples to strBuffer*/
         strBuffer.clear();
         for(int i =0; i<dict->triplas.size(); i++){
             strBuffer.append(std::to_string(dict->triplas[i].offset));
@@ -285,6 +303,7 @@ void EncodeLZ77(std::string filenameIn, std::string filenameOut, int encode)
 
 void DecodeLZ77(std::string filenameIn, std::string filenameOut)
 {
+    getWindowSize();
     readFileToBufferAsString(filenameIn);
     bitString.clear();
 
@@ -346,20 +365,4 @@ void DecodeLZ77(std::string filenameIn, std::string filenameOut)
     }
 
     writeDecodedFile(filenameOut, outString);
-}
-
-int main(int argc, char *argv[])
-{
-    DICTSIZE = stoi(std::string(argv[4]));
-    DICTBITS = floor(log2(DICTSIZE) + 1);
-    LOOKAHEADSIZE = stoi(std::string(argv[5]));
-    LOOKBITS = floor(log2(LOOKAHEADSIZE) + 1);
-    
-    if (std::string(argv[1]) == "1")
-    {
-        EncodeLZ77(argv[2], argv[3],1);
-    }else if(std::string(argv[1])== "2"){
-        DecodeLZ77(argv[2], argv[3]);
-    }
-    return 0;
 }
