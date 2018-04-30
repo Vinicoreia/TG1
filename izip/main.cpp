@@ -16,6 +16,6 @@
     
     */
 int main(int argc, char *argv[]){
-
+    HuffmanDecode("b.bin", "b.bmp");
     return 0;
 }

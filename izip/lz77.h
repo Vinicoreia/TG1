@@ -46,7 +46,8 @@ void EncodeLZ77(std::string filenameIn, std::string filenameOut, int encode=0);
 /* Decode LZ77 Following the specifications*/
 void DecodeLZ77(std::string filenameIn, std::string filenameOut);
 
-
+/* Gets the dictionary size and the lookahead size as input from the user*/
+void getWindowSize();
 
 /* The boyer moore algorithm is from https://en.m.wikipedia.org/wiki/Boyer%E2%80%93Moore_string_search_algorithm*/
 // delta1 table: delta1[c] contains the distance between the last
