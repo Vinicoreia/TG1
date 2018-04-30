@@ -131,7 +131,7 @@ std::string decimalToBitString(unsigned int n, unsigned int len)
     return r;
 }
 
-std::vector<std::pair<char, long long>> getFrequency(std::string buffer)
+std::vector<std::pair<char, long long>> getFrequencyU8(std::string buffer)
 {
     
     std::unordered_map<char, long long> mapSymbAmount;/*-*/
@@ -143,6 +143,56 @@ std::vector<std::pair<char, long long>> getFrequency(std::string buffer)
     }
 
     for (std::unordered_map<char, long long>::iterator it = mapSymbAmount.begin(); it != mapSymbAmount.end(); ++it)
+    {
+        pairSymbProb.push_back(std::make_pair((char)(it->first), (long long)(it->second)));
+    }
+
+    sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
+        return left.second < right.second;
+    });
+    sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
+        return left.first < right.first;
+    });
+    return pairSymbProb;
+}
+
+std::vector<std::pair<uint16_t, long long>> getFrequencyU16(std::string buffer)
+{
+
+    std::unordered_map<uint16_t, long long> mapSymbAmount;    /*-*/
+    std::vector<std::pair<uint16_t, long long>> pairSymbProb; /*-*/
+
+    for (long long i = 0; i < buffer.length(); i++)
+    {
+        mapSymbAmount[buffer[i]] += 1;
+    }
+
+    for (std::unordered_map<uint16_t, long long>::iterator it = mapSymbAmount.begin(); it != mapSymbAmount.end(); ++it)
+    {
+        pairSymbProb.push_back(std::make_pair((char)(it->first), (long long)(it->second)));
+    }
+
+    sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
+        return left.second < right.second;
+    });
+    sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
+        return left.first < right.first;
+    });
+    return pairSymbProb;
+}
+
+std::vector<std::pair<uint32_t, long long>> getFrequencyU32(std::string buffer)
+{
+
+    std::unordered_map<uint32_t, long long> mapSymbAmount;    /*-*/
+    std::vector<std::pair<uint32_t, long long>> pairSymbProb; /*-*/
+
+    for (long long i = 0; i < buffer.length(); i++)
+    {
+        mapSymbAmount[buffer[i]] += 1;
+    }
+
+    for (std::unordered_map<uint32_t, long long>::iterator it = mapSymbAmount.begin(); it != mapSymbAmount.end(); ++it)
     {
         pairSymbProb.push_back(std::make_pair((char)(it->first), (long long)(it->second)));
     }

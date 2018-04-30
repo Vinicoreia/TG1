@@ -8,7 +8,7 @@
 #include "huff.h"
 #include "util.h"
 
-void mapCodes(struct node *root, int len, std::vector<std::pair<char, int>> &pairSymbCodeLength)
+void mapCodes(struct nodeChar *root, int len, std::vector<std::pair<char, int>> &pairSymbCodeLength)
 {
     /*Essa função pode ser melhorada pois só precisamos calcular o tamanho do código de cada elemento*/
     if (!root)
@@ -190,15 +190,15 @@ void HuffmanEncode(std::string filenameIn, std::string filenameOut, int encode)
 {
     bitString.clear();
     readFileToBufferAsString(filenameIn);
-    std::vector<std::pair<char, long long>> pairSymbProb = getFrequency(strBuffer);
+    std::vector<std::pair<char, long long>> pairSymbProb = getFrequencyU8(strBuffer);
     std::vector<int> codeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; /*max CodeLength = 30*/
     std::vector<std::pair<char, int>> pairSymbCodeLength; /* maps the codeLength to each symbol*/
 
-    std::priority_queue<node *, std::vector<node *>, compare> heap;
+    std::priority_queue<nodeChar *, std::vector<nodeChar *>, compareChar> heap;
     std::unordered_map<char, std::pair<std::string, int>> mapSymbCodeLength;
-    struct node *nLeft, *nRight, *nTop;
+    struct nodeChar *nLeft, *nRight, *nTop;
     for(int i=0; i< pairSymbProb.size(); i++){
-        heap.push(new node(pairSymbProb[i].first, pairSymbProb[i].second, true));
+        heap.push(new nodeChar(pairSymbProb[i].first, pairSymbProb[i].second, true));
     }
     std::cout<<strBuffer.size();
 
@@ -207,7 +207,7 @@ void HuffmanEncode(std::string filenameIn, std::string filenameOut, int encode)
         heap.pop();
         nRight = heap.top();
         heap.pop();
-        nTop = new node(char(0x1f), nLeft->key_value + nRight->key_value, false);
+        nTop = new nodeChar(char(0x1f), nLeft->key_value + nRight->key_value, false);
         nTop->left = nLeft;
         nTop->right = nRight;
         heap.push(nTop);

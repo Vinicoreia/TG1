@@ -34,6 +34,8 @@ std::string charToBin(char c);
 void getFileSize(std::string filename);
 
 /* This function gets the frequency associated with the strbuffer*/
-std::vector<std::pair<char, long long>> getFrequency(std::string buffer);
+std::vector<std::pair<char, long long>> getFrequencyU8(std::string buffer);
+std::vector<std::pair<uint16_t, long long>> getFrequencyU16(std::string buffer);
+std::vector<std::pair<uint32_t, long long>> getFrequencyU32(std::string buffer);
 
 #endif // IZIP_UTIL_H
