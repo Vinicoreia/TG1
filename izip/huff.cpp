@@ -124,7 +124,7 @@ std::string writeHuffmanBitString(std::vector<std::pair<char, int>> &pairSymbCod
 }
 
 
-void huffmanDecode(std::string filenameIn, std::string filenameOut)
+void HuffmanDecode(std::string filenameIn, std::string filenameOut)
 {
     bitString.clear();
     readFileAsBinaryString(filenameIn);
@@ -189,19 +189,18 @@ void huffmanDecode(std::string filenameIn, std::string filenameOut)
 void HuffmanEncode(std::string filenameIn, std::string filenameOut, int encode)
 {
     bitString.clear();
-    
+    readFileToBufferAsString(filenameIn);
     std::vector<std::pair<char, long long>> pairSymbProb = getFrequency(strBuffer);
-    std::priority_queue<node *, std::vector<node *>, compare> heap;
-    std::vector<std::pair<char, int>> pairSymbCodeLength; /* maps the codeLength to each symbol*/
     std::vector<int> codeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; /*max CodeLength = 30*/
+    std::vector<std::pair<char, int>> pairSymbCodeLength; /* maps the codeLength to each symbol*/
+
+    std::priority_queue<node *, std::vector<node *>, compare> heap;
     std::unordered_map<char, std::pair<std::string, int>> mapSymbCodeLength;
     struct node *nLeft, *nRight, *nTop;
-
-    readFileToBufferAsString(filenameIn);
-
     for(int i=0; i< pairSymbProb.size(); i++){
         heap.push(new node(pairSymbProb[i].first, pairSymbProb[i].second, true));
     }
+    std::cout<<strBuffer.size();
 
     while(heap.size()!=1){
         nLeft = heap.top();

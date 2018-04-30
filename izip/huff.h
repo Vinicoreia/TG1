@@ -31,6 +31,6 @@ void mapCodes(struct node *root, int len, std::vector<std::pair<char, int>> &pai
 void calcCodeLengths(std::vector<std::pair<char, int>> &pairSymbCodeLength, std::vector<int> &codeLengths);
 void buildCodes(std::vector<std::pair<char, int>> &pairSymbCodeLength, std::vector<int> &codeLengths, std::unordered_map<char, std::pair<std::string, int>> &mapSymbCodeLength);
 std::string writeHuffmanBitString(std::vector<std::pair<char, int>> &pairSymbCodeLength, std::vector<int> &codeLengths, std::unordered_map<char, std::pair<std::string, int>> &mapSymbCodeLength);
-void huffmanDecode(std::string fileOutName);
-void HuffmanEncode(std::string fileOutName, int encode);
+void HuffmanDecode(std::string filenameIn, std::string filenameOut);
+void HuffmanEncode(std::string filenameIn, std::string filenameOut, int encode=0);
 #endif
