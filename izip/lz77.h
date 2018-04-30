@@ -2,7 +2,10 @@
 #define IZIP_LZ77_H_
 #include "util.h"
 #include <deque>
-
+extern int DICTSIZE;
+extern int LOOKAHEADSIZE;
+extern int DICTBITS;
+extern int LOOKBITS;
 /*OBS: When encoding or decoding the DICTIONARY size and the LOOKAHEAD size must be passed*/
 
 struct Data
@@ -42,7 +45,7 @@ void writeLZ77BitString(int offset, std::string match, uint8_t nextChar);
 /* Encode LZ77 Following the algorithm*/
 /* 0 for LZ77 output file*/
 /* 1 for getting the triples in the filebuffer*/
-void EncodeLZ77(std::string filenameIn, std::string filenameOut, int encode=0);
+std::deque<Data> EncodeLZ77(std::string filenameIn, std::string filenameOut, int encode = 0);
 /* Decode LZ77 Following the specifications*/
 void DecodeLZ77(std::string filenameIn, std::string filenameOut);
 
