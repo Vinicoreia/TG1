@@ -1,6 +1,7 @@
 #include "util.h"
 #include "deflate.h"
 #include "lz77.h"
+#include "huff.h"
 #include <iostream>
 #include <fstream>
 #include <string>
