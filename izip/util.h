@@ -33,9 +33,6 @@ std::string charToBin(char c);
 /*Function to get the filesize and return as a long long.*/
 void getFileSize(std::string filename);
 
-/*Function to complete the bitstring if it's not multiple of 8 (each byte is 8 bits) and write to file*/
-int WriteOutString(std::string bitString, std::string fileOutName);
-
 /* This function gets the frequency associated with the strbuffer*/
 std::vector<std::pair<char, long long>> getFrequency(std::string buffer);
 
