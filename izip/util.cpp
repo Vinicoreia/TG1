@@ -159,6 +159,7 @@ std::vector<std::pair<char, long long>> getFrequencyU8(std::string buffer)
 std::vector<std::pair<uint16_t, long long>> getFrequencyU16(std::vector<uint16_t> buffer)
 {
 
+    
     std::unordered_map<uint16_t, long long> mapSymbAmount;    /*-*/
     std::vector<std::pair<uint16_t, long long>> pairSymbProb; /*-*/
 
@@ -169,7 +170,7 @@ std::vector<std::pair<uint16_t, long long>> getFrequencyU16(std::vector<uint16_t
 
     for (std::unordered_map<uint16_t, long long>::iterator it = mapSymbAmount.begin(); it != mapSymbAmount.end(); ++it)
     {
-        pairSymbProb.push_back(std::make_pair((char)(it->first), (long long)(it->second)));
+        pairSymbProb.push_back(std::make_pair((uint16_t)(it->first), (long long)(it->second)));
     }
 
     sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
@@ -194,7 +195,7 @@ std::vector<std::pair<uint32_t, long long>> getFrequencyU32(std::vector<uint32_t
 
     for (std::unordered_map<uint32_t, long long>::iterator it = mapSymbAmount.begin(); it != mapSymbAmount.end(); ++it)
     {
-        pairSymbProb.push_back(std::make_pair((char)(it->first), (long long)(it->second)));
+        pairSymbProb.push_back(std::make_pair((uint32_t)(it->first), (long long)(it->second)));
     }
 
     sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
