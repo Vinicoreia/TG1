@@ -5,6 +5,7 @@
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <vector>
 /* Frequently used  streams*/
 extern std::string bitString;
 extern std::string strBuffer;

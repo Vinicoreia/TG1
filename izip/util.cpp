@@ -123,7 +123,6 @@ std::string decimalToBitString(unsigned int n, unsigned int len)
     return r;
 }
 
-
 std::vector<std::pair<char, long long>> getFrequency(std::string buffer)
 {
     

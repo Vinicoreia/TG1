@@ -4,6 +4,7 @@
 #include <queue>
 #include <algorithm>
 #include <bitset>
+#include <fstream>
 #include "huff.h"
 #include "util.h"
 
@@ -71,8 +72,8 @@ void buildCodes(std::vector<std::pair<char, int>> &pairSymbCodeLength, std::vect
     for (int i = 0; i < pairSymbCodeLength.size(); i++)
     {
         codeLen = pairSymbCodeLength[i].second - 1;
-        std::bitset<16> bs = start_code[codeLen];
-        codeStr = bs.to_string().substr(16 - pairSymbCodeLength[i].second);
+        std::bitset<30> bs = start_code[codeLen];
+        codeStr = bs.to_string().substr(30 - pairSymbCodeLength[i].second);
 
         mapSymbCodeLength[pairSymbCodeLength[i].first] = make_pair(codeStr, pairSymbCodeLength[i].second);
         start_code[codeLen] += 1;
@@ -122,7 +123,68 @@ std::string writeHuffmanBitString(std::vector<std::pair<char, int>> &pairSymbCod
     return huffmanBitString;
 }
 
-void huffmanEncode(){
+
+void huffmanDecode()
+{
+    std::string decoding;
+    std::string decoded;
+    std::unordered_map<std::string, char> mapCodeSymb;
+    char c;
+    int strPointer = 3;
+    int addedZeros = stoi(bitString.substr(0, 3), 0, 2);
+    bitString.resize(bitString.size() - addedZeros);
+    std::vector<int> codeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; /*max CodeLength = 30*/
+    std::vector<std::pair<char, int>> pairSymbCodeLength;                                                                      /* maps the codeLength to each symbol*/
+    std::unordered_map<char, std::pair<std::string, int>> mapSymbCodeLength;
+
+    for (int i = 0; i < 30; i++)
+    {
+        if (bitString[strPointer] == '1')
+        {
+            codeLengths[i] = stoi(bitString.substr(strPointer + 1, 7), 0, 2);
+            strPointer += 8;
+        }
+        else
+        {
+            strPointer += 1;
+        }
+    }
+
+    for (int j = 0; j < codeLengths.size(); j++)
+    {
+        for (int i = 0; i < codeLengths[j]; i++)
+        {
+            c = stol(bitString.substr(strPointer, 8), 0, 2);
+            pairSymbCodeLength.push_back(std::make_pair(c, j + 1));
+            strPointer += 8;
+        }
+    }
+    buildCodes(pairSymbCodeLength, codeLengths, mapSymbCodeLength); /*atribui o codigo canonico*/
+
+    for (std::unordered_map<char, std::pair<std::string, int>>::iterator i = mapSymbCodeLength.begin(); i != mapSymbCodeLength.end(); ++i)
+    {
+        mapCodeSymb[i->second.first] = i->first;
+    }
+
+    std::string dec;
+    for (std::string::iterator it = bitString.begin() + strPointer; it != bitString.end(); it++)
+    {
+        decoding += *it;
+        try
+        {
+            decoded += mapCodeSymb.at(decoding);
+            decoding.clear();
+        }
+        catch (const std::out_of_range &e)
+        {
+        }
+    }
+    std::ofstream output("teste2.txt", std::ios::out | std::ios::binary);
+    output << decoded; //WRITE TO FILE
+    output.close();
+}
+
+void HuffmanEncode(){
     std::vector<std::pair<char, long long>> pairSymbProb = getFrequency(strBuffer);
     std::priority_queue<node *, std::vector<node *>, compare> heap;
     std::vector<std::pair<char, int>> pairSymbCodeLength; /* maps the codeLength to each symbol*/
@@ -150,4 +212,11 @@ void huffmanEncode(){
     buildCodes(pairSymbCodeLength, codeLengths,mapSymbCodeLength); /*atribui o codigo canonico*/
 
     bitString = writeHuffmanBitString(pairSymbCodeLength, codeLengths,mapSymbCodeLength);
+    std::cout<<bitString.size()/8;
+}
+
+int main(){
+    readFileToBufferAsString("andrew-lang-theredfairybook.txt");
+    HuffmanEncode();
+    huffmanDecode();
 }
