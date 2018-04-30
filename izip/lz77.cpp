@@ -265,7 +265,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     return;
 }
 
-void EncodeLZ77(std::string filenameIn, std::string filenameOut, int encode)
+std::deque<Data> EncodeLZ77(std::string filenameIn, std::string filenameOut, int encode)
 {
    getWindowSize();
 
@@ -287,18 +287,13 @@ void EncodeLZ77(std::string filenameIn, std::string filenameOut, int encode)
     if(encode == 0){
         writeEncodedFile(filenameOut);
     }else if(encode ==1){
-        /*Write triples to strBuffer*/
-        strBuffer.clear();
-        for(int i =0; i<dict->triplas.size(); i++){
-            strBuffer.append(std::to_string(dict->triplas[i].offset));
-            strBuffer.append(std::to_string(dict->triplas[i].match.size()));
-            strBuffer += dict->triplas[i].nextChar;
-        }
+        /*returns the triples*/
+        return dict->triplas;
     }
     free(u8Buffer);
     delete look;
     delete dict;
-    return;
+    return {};
 }
 
 void DecodeLZ77(std::string filenameIn, std::string filenameOut)
