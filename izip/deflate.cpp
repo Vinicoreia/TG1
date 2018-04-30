@@ -21,7 +21,10 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode){
     EncodeLZ77(filenameIn, filenameOut, 1);
 
     std::vector<USIZE> bufferOffLen;
-    std::vector<char> bufferChar;
+    std::string bufferChar;
+    std::vector<std::pair<USIZE, long long>> pairOffLenProb; /*-*/
+    std::vector<std::pair<char, long long>> paircharProb;    /*-*/
+
     USIZE aux = 0;
     for(int i =0; i<strBuffer.size(); i+=3){
         aux = strBuffer[i];
@@ -32,4 +35,6 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode){
     }
 
     /*Huffman Part*/
+    paircharProb = getFrequencyU8(bufferChar);
+    pairOffLenProb = getFrequencyU16(bufferOffLen);
 }
