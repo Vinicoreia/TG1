@@ -411,8 +411,8 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
 
 int main(int argc, char* argv[]){
     if(std::string(argv[1])=="1")
-        DeflateEncode("bee.bmp", "b.bin", 0);
+        DeflateEncode("Cardbau.png", "b.bin", 0);
     else
-        decompressFile("b.bin", "a.bmp");
+        decompressFile("b.bin", "a.png");
     return 0;
 }
