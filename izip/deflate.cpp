@@ -7,9 +7,9 @@
 #include <queue>
 #include <bitset>
 
-#define USIZE uint16_t
-#define SHIFT 8
-#define MASK 0xFF
+#define USIZE uint32_t
+#define SHIFT 16
+#define MASK 0xFFFF
 /*1- Como aplicar Burrows wheeler (antes e depois, só antes ou só depois)*/
 /*2- Como splitar, quantos blocos, a partir de qual tamanho*/
 /*3- lembrar do rle definido*/
@@ -25,7 +25,7 @@ std::string offLenToBin(USIZE c)
     return charBin;
 }
 
-void mapCodesOffLen(struct nodeU16 *root, int len, std::vector<std::pair<uint16_t, int>> &pairOffLenCodeLength)
+void mapCodesOffLen(struct nodeU32 *root, int len, std::vector<std::pair<USIZE, int>> &pairOffLenCodeLength)
 {
     if (!root)
         return;
@@ -37,7 +37,7 @@ void mapCodesOffLen(struct nodeU16 *root, int len, std::vector<std::pair<uint16_
     mapCodesOffLen(root->left, len + 1, pairOffLenCodeLength);
     mapCodesOffLen(root->right, len + 1, pairOffLenCodeLength);
 }
-void calcOffLenCodeLengths(std::vector<std::pair<uint16_t, int>> &pairOffLenCodeLength, std::vector<int> &offLenCodeLengths)
+void calcOffLenCodeLengths(std::vector<std::pair<USIZE, int>> &pairOffLenCodeLength, std::vector<int> &offLenCodeLengths)
 {
     std::sort(pairOffLenCodeLength.begin(), pairOffLenCodeLength.end(), [](auto &left, auto &right) {
         if (left.second == right.second)
@@ -54,7 +54,7 @@ void calcOffLenCodeLengths(std::vector<std::pair<uint16_t, int>> &pairOffLenCode
     }
 }
 
-void buildOffLenCodes(std::vector<std::pair<uint16_t, int>> &pairOffLenCodeLength, std::vector<int> &offLenCodeLengths, std::unordered_map<uint16_t, std::pair<std::string, int>> &mapOffLenCodeLength)
+void buildOffLenCodes(std::vector<std::pair<USIZE, int>> &pairOffLenCodeLength, std::vector<int> &offLenCodeLengths, std::unordered_map<USIZE, std::pair<std::string, int>> &mapOffLenCodeLength)
 {
     std::vector<int> start_code;
     int count, code, nCodes;
@@ -89,12 +89,12 @@ void buildOffLenCodes(std::vector<std::pair<uint16_t, int>> &pairOffLenCodeLengt
         std::bitset<30> bs = start_code[codeLen];
         codeStr = bs.to_string().substr(30 - pairOffLenCodeLength[i].second);
 
-        mapOffLenCodeLength[pairOffLenCodeLength[i].first] = make_pair(codeStr, pairOffLenCodeLength[i].second);
+        mapOffLenCodeLength[pairOffLenCodeLength[i].first] = std::make_pair(codeStr, pairOffLenCodeLength[i].second);
         start_code[codeLen] += 1;
     }
 }
 
-std::string WriteDeflateBitString(std::deque<Data> &codeTriples, std::vector<std::pair<char, int>> &pairCharCodeLength, std::vector<int> &charCodeLengths, std::unordered_map<char, std::pair<std::string, int>> &mapCharCodeLength, std::vector<std::pair<uint16_t, int>> &pairOffLenCodeLength, std::vector<int> &offLenCodeLengths, std::unordered_map<uint16_t, std::pair<std::string, int>> &mapOffLenCodeLength)
+std::string WriteDeflateBitString(std::deque<Data> &codeTriples, std::vector<std::pair<char, int>> &pairCharCodeLength, std::vector<int> &charCodeLengths, std::unordered_map<char, std::pair<std::string, int>> &mapCharCodeLength, std::vector<std::pair<USIZE, int>> &pairOffLenCodeLength, std::vector<int> &offLenCodeLengths, std::unordered_map<USIZE, std::pair<std::string, int>> &mapOffLenCodeLength)
 {
     int count = 0;
     /*HEADER*/
@@ -108,7 +108,7 @@ std::string WriteDeflateBitString(std::deque<Data> &codeTriples, std::vector<std
         else
         {
             out += "1";
-            out.append(decimalToBitString(charCodeLengths[i],5));
+            out.append(decimalToBitString(charCodeLengths[i],8));
         }
     }
 
@@ -126,13 +126,12 @@ std::string WriteDeflateBitString(std::deque<Data> &codeTriples, std::vector<std
         else
         {
             out += "1";
-            out.append(decimalToBitString(offLenCodeLengths[i], 5));
+            out.append(decimalToBitString(offLenCodeLengths[i], 12));
         }
     }
 
     for (auto it : pairOffLenCodeLength)
     {
-        std::cout<<it.first<<"\n";
         out.append(offLenToBin(it.first));
     }
 
@@ -174,7 +173,7 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode){
     std::vector<std::pair<USIZE, long long>> pairOffLenProb; /*-*/
     std::vector<std::pair<char, long long>> paircharProb;    /*-*/
     std::priority_queue<nodeChar *, std::vector<nodeChar *>, compareChar> heapChar;
-    std::priority_queue<nodeU16 *, std::vector<nodeU16 *>, compareU16> heapOffLen;
+    std::priority_queue<nodeU32 *, std::vector<nodeU32 *>, compareU32> heapOffLen;
     std::vector<std::pair<char, int>> pairCharCodeLength;
     std::vector<int> charCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     std::vector<std::pair<USIZE, int>> pairOffLenCodeLength;
@@ -191,23 +190,20 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode){
         bufferOffLen.push_back(aux);
         bufferChar.push_back(it.nextChar);
     }
+
     /*Huffman Part*/
     paircharProb = getFrequencyU8(bufferChar);
-    pairOffLenProb = getFrequencyU16(bufferOffLen);
-    for(auto it:pairOffLenProb){
-        std::cout<<it.first<< " "<<it.second<<"\n";
-    }
-    std::cout<<"\n\n";
+    pairOffLenProb = getFrequencyU32(bufferOffLen);
     struct nodeChar *nLeftC, *nRightC, *nTopC;
     for (int i = 0; i < paircharProb.size(); i++)
     {
         heapChar.push(new nodeChar(paircharProb[i].first, paircharProb[i].second, true));
     }
 
-    struct nodeU16 *nLeftOL, *nRightOL, *nTopOL;
+    struct nodeU32 *nLeftOL, *nRightOL, *nTopOL;
     for (int i = 0; i < pairOffLenProb.size(); i++)
     {
-        heapOffLen.push(new nodeU16(pairOffLenProb[i].first, pairOffLenProb[i].second, true));
+        heapOffLen.push(new nodeU32(pairOffLenProb[i].first, pairOffLenProb[i].second, true));
     }
 
     while (heapChar.size() != 1)
@@ -228,7 +224,7 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode){
         heapOffLen.pop();
         nRightOL = heapOffLen.top();
         heapOffLen.pop();
-        nTopOL = new nodeU16((USIZE)0x1f, nLeftOL->key_value + nRightOL->key_value, false);
+        nTopOL = new nodeU32((USIZE)0x1f, nLeftOL->key_value + nRightOL->key_value, false);
         nTopOL->left = nLeftOL;
         nTopOL->right = nRightOL;
         heapOffLen.push(nTopOL);
@@ -242,7 +238,6 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode){
     buildOffLenCodes(pairOffLenCodeLength, offLenCodeLengths, mapOffLenCodeLength);
     bitString.clear();
     bitString = WriteDeflateBitString(codeTriples, pairCharCodeLength, charCodeLengths, mapCharCodeLength, pairOffLenCodeLength, offLenCodeLengths, mapOffLenCodeLength);
-    std::cout<<bitString;
     writeEncodedFile(filenameOut);
 }
 
@@ -257,7 +252,7 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
     std::vector<std::pair<USIZE, long long>> pairOffLenProb; /*-*/
     std::vector<std::pair<char, long long>> paircharProb;    /*-*/
     std::priority_queue<nodeChar *, std::vector<nodeChar *>, compareChar> heapChar;
-    std::priority_queue<nodeU16 *, std::vector<nodeU16 *>, compareU16> heapOffLen;
+    std::priority_queue<nodeU32 *, std::vector<nodeU32 *>, compareU32> heapOffLen;
     std::vector<std::pair<char, int>> pairCharCodeLength;
     std::vector<int> charCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     std::vector<std::pair<USIZE, int>> pairOffLenCodeLength;
@@ -277,8 +272,8 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
     {
         if (bitString[strPointer] == '1')
         {
-            charCodeLengths[i] = stoi(bitString.substr(strPointer + 1, 5), 0, 2);
-            strPointer += 6;
+            charCodeLengths[i] = stoi(bitString.substr(strPointer + 1, 8), 0, 2);
+            strPointer += 9;
         }
         else
         {
@@ -301,8 +296,8 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
     {
         if (bitString[strPointer] == '1')
         {
-            offLenCodeLengths[i] = stoi(bitString.substr(strPointer + 1, 5), 0, 2);
-            strPointer += 6;
+            offLenCodeLengths[i] = stoi(bitString.substr(strPointer + 1, 12), 0, 2);
+            strPointer += 13;
         }
         else
         {
@@ -335,8 +330,6 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
         mapOffLenCode[i->second.first] = i->first;
     }
 
-    
-
     std::deque<char> ch;
     std::deque<USIZE> offLen;
     for (std::string::iterator it = bitString.begin() + strPointer; it != bitString.end(); it++)
@@ -365,10 +358,6 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
         {
         }
     }
-
-    for(int i =0; i< ch.size();i++){
-        std::cout << (offLen[i]>>SHIFT) <<" "<<(offLen[i] & MASK)<<" " <<ch[i];
-    }
     decoding.clear();
 
     std::string bitChar;
@@ -383,9 +372,11 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
     
     for (int k = 0; k < ch.size(); k++)
     {
+
         nextChar = ch[k];
         jump = offLen[k] >> SHIFT;
         len = offLen[k] & MASK;
+
         if (jump == 0)
         {
             outString += nextChar;
@@ -411,14 +402,17 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
             }
         }
     }
+    writeDecodedFile(filenameOut, outString);
     // ofstream output(fileNameOut, ios::out | ios::binary);
     // output << outString; //WRITE TO FILE
-    std::cout<<"\n\n"<<outString<<"\n\n";
+    // std::cout<<"\n\n"<<outString<<"\n\n";
     std::cout << "Final filesize after decompressing: " << outString.size() << " bytes";
 }
 
-int main(){
-    // DeflateEncode("teste.txt", "b.bin", 0);
-    decompressFile("b.bin", "a.txt");
+int main(int argc, char* argv[]){
+    if(std::string(argv[1])=="1")
+        DeflateEncode("bee.bmp", "b.bin", 0);
+    else
+        decompressFile("b.bin", "a.bmp");
     return 0;
 }
