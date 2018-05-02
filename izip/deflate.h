@@ -18,6 +18,6 @@ void mapCodesOffLen(struct nodeU32 *root, int len, std::vector<std::pair<USIZE, 
 void calcOffLenCodeLengths(std::vector<std::pair<USIZE, int>> &pairOffLenCodeLength, std::vector<int> &offLenCodeLengths);
 void buildOffLenCodes(std::vector<std::pair<USIZE, int>> &pairOffLenCodeLength, std::vector<int> &offLenCodeLengths, std::unordered_map<USIZE, std::pair<std::string, int>> &mapOffLenCodeLength);
 std::string WriteDeflateBitString(std::deque<Data> &codeTriples, std::vector<std::pair<char, int>> &pairCharCodeLength, std::vector<int> &charCodeLengths, std::unordered_map<char, std::pair<std::string, int>> &mapCharCodeLength, std::vector<std::pair<USIZE, int>> &pairOffLenCodeLength, std::vector<int> &offLenCodeLengths, std::unordered_map<USIZE, std::pair<std::string, int>> &mapOffLenCodeLength);
-void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode);
+void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode=0);
 void decompressFile(std::string filenameIn, std::string filenameOut);
 #endif
