@@ -1,15 +1,9 @@
 #include "deflate.h"
-#include "util.h"
-#include "lz77.h"
-#include "huff.h"
 #include <algorithm>
-#include <iostream>
 #include <queue>
 #include <bitset>
 
-#define USIZE uint32_t
-#define SHIFT 16
-#define MASK 0xFFFF
+
 /*1- Como aplicar Burrows wheeler (antes e depois, só antes ou só depois)*/
 /*2- Como splitar, quantos blocos, a partir de qual tamanho*/
 /*3- lembrar do rle definido*/
@@ -403,16 +397,5 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
         }
     }
     writeDecodedFile(filenameOut, outString);
-    // ofstream output(fileNameOut, ios::out | ios::binary);
-    // output << outString; //WRITE TO FILE
-    // std::cout<<"\n\n"<<outString<<"\n\n";
     std::cout << "Final filesize after decompressing: " << outString.size() << " bytes";
-}
-
-int main(int argc, char* argv[]){
-    if(std::string(argv[1])=="1")
-        DeflateEncode("Cardbau.png", "b.bin", 0);
-    else
-        decompressFile("b.bin", "a.png");
-    return 0;
 }
