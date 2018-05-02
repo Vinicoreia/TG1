@@ -75,7 +75,7 @@ int writeEncodedFile(std::string fileOutName)
     if(fileOut.is_open()){
         fileOut<<outString;
         fileOut.close();
-        std::cout << "Final filesize after encoding: " << outString.size() << " bytes" << std::endl;
+        std::cout << "Final filesize after encoding: " << outString.size() << " bytes" << "\n\n";
         
         return 0;
     }else{
