@@ -289,7 +289,6 @@ std::deque<Data> EncodeLZ77(std::string filenameIn, std::string filenameOut, int
         writeEncodedFile(filenameOut);
     }else if(encode ==1){
         /*returns the triples*/
-        std::cout<<bitString.size()/8;
         return dict->triplas;
     }
     free(u8Buffer);

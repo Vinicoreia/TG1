@@ -235,7 +235,7 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode){
     if(encode ==0){
         writeEncodedFile(filenameOut);
     }else{
-        std::cout<<bitString.size()/8;
+        std::cout<<bitString.size()/8<<std::endl;
     }
 }
 
@@ -401,5 +401,4 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
         }
     }
     writeDecodedFile(filenameOut, outString);
-    std::cout << "Final filesize after decompressing: " << outString.size() << " bytes";
 }
