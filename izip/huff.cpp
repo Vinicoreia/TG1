@@ -200,8 +200,6 @@ void HuffmanEncode(std::string filenameIn, std::string filenameOut, int encode)
     for(int i=0; i< pairSymbProb.size(); i++){
         heap.push(new nodeChar(pairSymbProb[i].first, pairSymbProb[i].second, true));
     }
-    std::cout<<strBuffer.size();
-
     while(heap.size()!=1){
         nLeft = heap.top();
         heap.pop();

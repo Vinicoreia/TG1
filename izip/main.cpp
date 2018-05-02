@@ -33,15 +33,15 @@ int main(int argc, char *argv[]){
     args.erase(args.begin(),args.begin()+3);
     
     for(auto it: args){
-        if(it == "-he"){
+        if(std::string(it) == "-he"){
             filenameOut.append(".huf");
             HuffmanEncode(filenameIn, filenameOut);
         }
-        else if(it == "-de"){
+        else if(std::string(it) == "-de"){
             filenameOut.append(".def");
             DeflateEncode(filenameIn, filenameOut);
         }
-        else if( it == "-lz77e"){
+        else if( std::string(it) == "-lz77e"){
             filenameOut.append(".lz77");
             EncodeLZ77(filenameIn, filenameOut);            
         }
