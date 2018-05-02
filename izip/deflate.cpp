@@ -232,7 +232,11 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode){
     buildOffLenCodes(pairOffLenCodeLength, offLenCodeLengths, mapOffLenCodeLength);
     bitString.clear();
     bitString = WriteDeflateBitString(codeTriples, pairCharCodeLength, charCodeLengths, mapCharCodeLength, pairOffLenCodeLength, offLenCodeLengths, mapOffLenCodeLength);
-    writeEncodedFile(filenameOut);
+    if(encode ==0){
+        writeEncodedFile(filenameOut);
+    }else{
+        std::cout<<bitString.size()/8;
+    }
 }
 
 void decompressFile(std::string filenameIn, std::string filenameOut)
