@@ -1,0 +1,11 @@
+1 - Executa o CRC 32 para verificação de erros.
+2 - Coloca os dados e flags do formato do gzip
+3 - bp = bitPointer
+4 - Realiza o Deflate
+
+5- DeflatePart:
+    - btype=2 dá a melhor compressão, então vamos direto ao ponto
+    - Executa o ZopfliBlockSplit
+    - Inicializa A LZ77STORE com todos os parametros zerados
+    
+

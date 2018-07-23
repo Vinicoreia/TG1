@@ -59,6 +59,7 @@
         "algorithm": "cpp",
         "rope": "cpp",
         "slist": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "deque": "cpp"
     }
 }
