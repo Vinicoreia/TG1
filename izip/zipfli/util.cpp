@@ -12,6 +12,14 @@ std::vector<char> vecBuffer;
 uint8_t* u8Buffer=0;
 size_t filesize=0;
 
+static unsigned long CRC(const unsigned char* data, size_t size) {
+  unsigned long result = 0xffffffffu;
+  for (; size > 0; size--) {
+    result = crc32_table[(result ^ *(data++)) & 0xff] ^ (result >> 8);
+  }
+  return result ^ 0xffffffffu;
+}
+
 void readFileToBufferAsString(std::string filename)
 {
     std::ifstream file(filename, std::ios::in | std::ios::binary);
@@ -35,7 +43,7 @@ void readFileAsVector(std::string filename){
 }
 
 
-void readFileAsU8(std::string filenameIn){
+uint8_t* readFileAsU8(std::string filenameIn){
     FILE *file = fopen(filenameIn.c_str(), "rb");
     if (!file)
         exit(1);
@@ -45,11 +53,12 @@ void readFileAsU8(std::string filenameIn){
     u8Buffer = (unsigned char *)malloc(filesize);
     fread(u8Buffer, 1, filesize, file);
     fclose(file);
+    return u8Buffer;
 }
 
 void readFileAsBinaryString(std::string filename){
     readFileToBufferAsString(filename);
-    for (long unsigned int i = 0; i < strBuffer.size(); i++)
+    for (int i = 0; i < strBuffer.size(); i++)
     {
         std::bitset<8> bin(strBuffer.c_str()[i]);
         bitString += bin.to_string();
@@ -65,7 +74,7 @@ int writeEncodedFile(std::string fileOutName)
     }
 
     std::string outString;
-    for (long unsigned int i = 0; i < bitString.size(); i += 8)
+    for (int i = 0; i < bitString.size(); i += 8)
     {
         outString += static_cast<char>(stoi(bitString.substr(i, 8), 0, 2));
     }
@@ -137,7 +146,7 @@ std::vector<std::pair<char, long long>> getFrequencyU8(std::string buffer)
     std::unordered_map<char, long long> mapSymbAmount;/*-*/
     std::vector<std::pair<char, long long>> pairSymbProb; /*-*/
     
-    for (long unsigned int i = 0; i < buffer.length(); i++)
+    for (long long i = 0; i < buffer.length(); i++)
     {
         mapSymbAmount[buffer[i]] += 1;
     }
@@ -163,7 +172,7 @@ std::vector<std::pair<uint16_t, long long>> getFrequencyU16(std::vector<uint16_t
     std::unordered_map<uint16_t, long long> mapSymbAmount;    /*-*/
     std::vector<std::pair<uint16_t, long long>> pairSymbProb; /*-*/
 
-    for (long unsigned int i = 0; i < buffer.size(); i++)
+    for (long long i = 0; i < buffer.size(); i++)
     {
         mapSymbAmount[buffer[i]] += 1;
     }
@@ -188,7 +197,7 @@ std::vector<std::pair<uint32_t, long long>> getFrequencyU32(std::vector<uint32_t
     std::unordered_map<uint32_t, long long> mapSymbAmount;    /*-*/
     std::vector<std::pair<uint32_t, long long>> pairSymbProb; /*-*/
 
-    for (long unsigned int i = 0; i < buffer.size(); i++)
+    for (long long i = 0; i < buffer.size(); i++)
     {
         mapSymbAmount[buffer[i]] += 1;
     }
