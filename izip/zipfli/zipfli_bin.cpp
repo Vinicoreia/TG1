@@ -25,30 +25,10 @@ static int LoadFile(std::string filename,
   *outsize = 0;
   file = fopen(filename.c_str(), "rb");
   if (!file) return 0;
-
   fseek(file , 0 , SEEK_END);
   *outsize = ftell(file);
-  if(*outsize > 2147483647) {
-    fprintf(stderr,"Files larger than 2GB are not supported.\n");
-    exit(EXIT_FAILURE);
-  }
   rewind(file);
-
   *out = (unsigned char*)malloc(*outsize);
-// TODO a parte a baixo é para checar se é diretório
-//   if (*outsize && (*out)) {
-//     size_t testsize = fread(*out, 1, *outsize, file);
-//     if (testsize != *outsize) {
-//       /* It could be a directory */
-//       free(*out);
-//       *out = 0;
-//       *outsize = 0;
-//       fclose(file);
-//       return 0;
-//     }
-//   }
-
-
   fclose(file);
   return 1;
 }

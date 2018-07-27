@@ -675,30 +675,9 @@ double ZipfliCalculateBlockSize(const ZipfliLZ77Store *lz77,
 {
     unsigned ll_lengths[ZIPFLI_NUM_LL];
     unsigned d_lengths[ZIPFLI_NUM_D];
-
     double result = 3; /* bfinal and btype bits */
-
-    if (btype == 0)
-    {
-        size_t length = ZipfliLZ77GetByteRange(lz77, lstart, lend);
-        size_t rem = length % 65535;
-        size_t blocks = length / 65535 + (rem ? 1 : 0);
-        /* An uncompressed block must actually be split into multiple blocks if it's
-       larger than 65535 bytes long. Eeach block header is 5 bytes: 3 bits,
-       padding, LEN and NLEN (potential less padding for first one ignored). */
-        return blocks * 5 * 8 + length * 8;
-    }
-    if (btype == 1)
-    {
-        GetFixedTree(ll_lengths, d_lengths);
-        result += CalculateBlockSymbolSize(
-            ll_lengths, d_lengths, lz77, lstart, lend);
-    }
-    else
-    {
-        result += GetDynamicLengths(lz77, lstart, lend, ll_lengths, d_lengths);
-    }
-
+    result += GetDynamicLengths(lz77, lstart, lend, ll_lengths, d_lengths);
+    
     return result;
 }
 
@@ -713,53 +692,6 @@ double ZipfliCalculateBlockSizeAutoType(const ZipfliLZ77Store *lz77,
     return (uncompressedcost < fixedcost && uncompressedcost < dyncost)
                ? uncompressedcost
                : (fixedcost < dyncost ? fixedcost : dyncost);
-}
-
-/* Since an uncompressed block can be max 65535 in size, it actually adds
-multible blocks if needed. */
-static void AddNonCompressedBlock(const ZipfliOptions *options, int final,
-                                  const unsigned char *in, size_t instart,
-                                  size_t inend,
-                                  unsigned char *bp,
-                                  unsigned char **out, size_t *outsize)
-{
-    size_t pos = instart;
-    (void)options;
-    for (;;)
-    {
-        size_t i;
-        unsigned short blocksize = 65535;
-        unsigned short nlen;
-        int currentfinal;
-
-        if (pos + blocksize > inend)
-            blocksize = inend - pos;
-        currentfinal = pos + blocksize >= inend;
-
-        nlen = ~blocksize;
-
-        AddBit(final && currentfinal, bp, out, outsize);
-        /* BTYPE 00 */
-        AddBit(0, bp, out, outsize);
-        AddBit(0, bp, out, outsize);
-
-        /* Any bits of input up to the next byte boundary are ignored. */
-        *bp = 0;
-
-        ZIPFLI_APPEND_DATA(blocksize % 256, out, outsize);
-        ZIPFLI_APPEND_DATA((blocksize / 256) % 256, out, outsize);
-        ZIPFLI_APPEND_DATA(nlen % 256, out, outsize);
-        ZIPFLI_APPEND_DATA((nlen / 256) % 256, out, outsize);
-
-        for (i = 0; i < blocksize; i++)
-        {
-            ZIPFLI_APPEND_DATA(in[pos + i], out, outsize);
-        }
-
-        if (currentfinal)
-            break;
-        pos += blocksize;
-    }
 }
 
 /*
@@ -794,40 +726,19 @@ static void AddLZ77Block(const ZipfliOptions *options, int btype, int final,
     size_t compressed_size;
     size_t uncompressed_size = 0;
     size_t i;
-    if (btype == 0)
-    {
-        size_t length = ZipfliLZ77GetByteRange(lz77, lstart, lend);
-        size_t pos = lstart == lend ? 0 : lz77->pos[lstart];
-        size_t end = pos + length;
-        AddNonCompressedBlock(options, final,
-                              lz77->data, pos, end, bp, out, outsize);
-        return;
-    }
 
     AddBit(final, bp, out, outsize);
     AddBit(btype & 1, bp, out, outsize);
     AddBit((btype & 2) >> 1, bp, out, outsize);
 
-    if (btype == 1)
-    {
-        /* Fixed block. */
-        GetFixedTree(ll_lengths, d_lengths);
-    }
-    else
-    {
-        /* Dynamic block. */
-        unsigned detect_tree_size;
-        assert(btype == 2);
+    /* Dynamic block. */
+    unsigned detect_tree_size;
+    assert(btype == 2);
 
-        GetDynamicLengths(lz77, lstart, lend, ll_lengths, d_lengths);
+    GetDynamicLengths(lz77, lstart, lend, ll_lengths, d_lengths);
 
-        detect_tree_size = *outsize;
-        AddDynamicTree(ll_lengths, d_lengths, bp, out, outsize);
-        if (options->verbose)
-        {
-            fprintf(stderr, "treesize: %d\n", (int)(*outsize - detect_tree_size));
-        }
-    }
+    detect_tree_size = *outsize;
+    AddDynamicTree(ll_lengths, d_lengths, bp, out, outsize);
 
     ZipfliLengthsToSymbols(ll_lengths, ZIPFLI_NUM_LL, 15, ll_symbols);
     ZipfliLengthsToSymbols(d_lengths, ZIPFLI_NUM_D, 15, d_symbols);
@@ -844,12 +755,6 @@ static void AddLZ77Block(const ZipfliOptions *options, int btype, int final,
         uncompressed_size += lz77->dists[i] == 0 ? 1 : lz77->litlens[i];
     }
     compressed_size = *outsize - detect_block_size;
-    if (options->verbose)
-    {
-        fprintf(stderr, "compressed block size: %d (%dk) (unc: %d)\n",
-                (int)compressed_size, (int)(compressed_size / 1024),
-                (int)(uncompressed_size));
-    }
 }
 
 static void AddLZ77BlockAutoType(const ZipfliOptions *options, int final,
@@ -939,30 +844,6 @@ void ZipfliDeflatePart(const ZipfliOptions *options, int btype, int final,
     size_t *splitpoints = 0;
     double totalcost = 0;
     ZipfliLZ77Store lz77;
-
-    /* If btype=2 is specified, it tries all block types. If a lesser btype is
-  given, then however it forces that one. Neither of the lesser types needs
-  block splitting as they have no dynamic huffman trees. */
-    if (btype == 0)
-    {
-        AddNonCompressedBlock(options, final, in, instart, inend, bp, out, outsize);
-        return;
-    }
-    else if (btype == 1)
-    {
-        ZipfliLZ77Store store;
-        ZipfliBlockState s;
-        ZipfliInitLZ77Store(in, &store);
-        ZipfliInitBlockState(options, instart, inend, 1, &s);
-
-        ZipfliLZ77OptimalFixed(&s, in, instart, inend, &store);
-        AddLZ77Block(options, btype, final, &store, 0, store.size, 0,
-                     bp, out, outsize);
-
-        ZipfliCleanBlockState(&s);
-        ZipfliCleanLZ77Store(&store);
-        return;
-    }
 
     if (options->blocksplitting)
     {
