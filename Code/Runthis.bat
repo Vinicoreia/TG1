@@ -1,1 +1,0 @@
-for /r %%i in (files/*) do main.exe -e files\%%~ni%%~xi compressed\%%~ni.pre

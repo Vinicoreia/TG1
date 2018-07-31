@@ -12,7 +12,7 @@ std::string offLenToBin(USIZE c)
 {
     std::string charBin;
     charBin.clear();
-    for (int i = 8 * sizeof(USIZE) - 1; i >= 0; --i)
+    for (long unsigned int i = 8 * sizeof(USIZE) - 1; i >= 0; --i)
     {
         (c & (1 << i)) ? charBin += '1' : charBin += '0';
     }
@@ -41,7 +41,7 @@ void calcOffLenCodeLengths(std::vector<std::pair<USIZE, int>> &pairOffLenCodeLen
         return left.second < right.second;
     });
 
-    for (int i = 0; i < pairOffLenCodeLength.size(); i++)
+    for (long unsigned int i = 0; i < pairOffLenCodeLength.size(); i++)
     {
         int index = pairOffLenCodeLength[i].second;
         offLenCodeLengths[index - 1] += 1;
@@ -54,7 +54,7 @@ void buildOffLenCodes(std::vector<std::pair<USIZE, int>> &pairOffLenCodeLength, 
     int count, code, nCodes;
     code = 0;
 
-    for (int i = static_cast<int>(offLenCodeLengths.size()) - 1; i >= 0; --i)
+    for (long unsigned int i = static_cast<int>(offLenCodeLengths.size()) - 1; i >= 0; --i)
     {
         if (offLenCodeLengths.at(i) != 0)
         {
@@ -67,7 +67,7 @@ void buildOffLenCodes(std::vector<std::pair<USIZE, int>> &pairOffLenCodeLength, 
     start_code[count - 1] = code;
     nCodes = offLenCodeLengths[count - 1];
     count--;
-    for (int i = count - 1; i >= 0; i--)
+    for (long unsigned int i = count - 1; i >= 0; i--)
     {
         code = code + nCodes;
         code = code >> 1;
@@ -77,7 +77,7 @@ void buildOffLenCodes(std::vector<std::pair<USIZE, int>> &pairOffLenCodeLength, 
 
     int codeLen;
     std::string codeStr;
-    for (int i = 0; i < pairOffLenCodeLength.size(); i++)
+    for (long unsigned int i = 0; i < pairOffLenCodeLength.size(); i++)
     {
         codeLen = pairOffLenCodeLength[i].second - 1;
         std::bitset<30> bs = start_code[codeLen];
@@ -93,7 +93,7 @@ std::string WriteDeflateBitString(std::deque<Data> &codeTriples, std::vector<std
     int count = 0;
     /*HEADER*/
     std::string out;
-    for (int i = 0; i < charCodeLengths.size(); i++)
+    for (long unsigned int i = 0; i < charCodeLengths.size(); i++)
     {
         if (charCodeLengths[i] == 0)
         {
@@ -111,7 +111,7 @@ std::string WriteDeflateBitString(std::deque<Data> &codeTriples, std::vector<std
         out.append(charToBin(it.first));
     }
 
-    for (int i = 0; i < offLenCodeLengths.size(); i++)
+    for (long unsigned int i = 0; i < offLenCodeLengths.size(); i++)
     {
         if (offLenCodeLengths[i] == 0)
         {
@@ -189,13 +189,13 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode){
     paircharProb = getFrequencyU8(bufferChar);
     pairOffLenProb = getFrequencyU32(bufferOffLen);
     struct nodeChar *nLeftC, *nRightC, *nTopC;
-    for (int i = 0; i < paircharProb.size(); i++)
+    for (long unsigned int i = 0; i < paircharProb.size(); i++)
     {
         heapChar.push(new nodeChar(paircharProb[i].first, paircharProb[i].second, true));
     }
 
     struct nodeU32 *nLeftOL, *nRightOL, *nTopOL;
-    for (int i = 0; i < pairOffLenProb.size(); i++)
+    for (long unsigned int i = 0; i < pairOffLenProb.size(); i++)
     {
         heapOffLen.push(new nodeU32(pairOffLenProb[i].first, pairOffLenProb[i].second, true));
     }
@@ -266,7 +266,7 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
     int addedZeros = stoi(bitString.substr(0, 3), 0, 2);
     bitString.resize(bitString.size() - addedZeros);
 
-    for (int i = 0; i < 30; i++)
+    for (long unsigned int i = 0; i < 30; i++)
     {
         if (bitString[strPointer] == '1')
         {
@@ -278,7 +278,7 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
             strPointer += 1;
         }
     }
-    for (int j = 0; j < charCodeLengths.size(); j++)
+    for (long unsigned int j = 0; j < charCodeLengths.size(); j++)
     {
         for (int i = 0; i < charCodeLengths[j]; i++)
         {
@@ -290,7 +290,7 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
 
     /*Agora pra Uint*/
 
-    for (int i = 0; i < 30; i++)
+    for (long unsigned int i = 0; i < 30; i++)
     {
         if (bitString[strPointer] == '1')
         {
@@ -304,7 +304,7 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
     }
     USIZE aux;
 
-    for (int j = 0; j < offLenCodeLengths.size(); j++)
+    for (long unsigned int j = 0; j < offLenCodeLengths.size(); j++)
     {
         for (int i = 0; i < offLenCodeLengths[j]; i++)
         {
@@ -368,7 +368,7 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
     int len;
     char nextChar;
     
-    for (int k = 0; k < ch.size(); k++)
+    for (long unsigned int k = 0; k < ch.size(); k++)
     {
 
         nextChar = ch[k];
@@ -380,7 +380,7 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
             outString += nextChar;
             dict += nextChar;
             windowPointer += 1;
-            if (dict.size() > DICTSIZE)
+            if ((int)(int) dict.size() > DICTSIZE)
             {
                 dict.erase(0, 1);
             }
@@ -389,12 +389,12 @@ void decompressFile(std::string filenameIn, std::string filenameOut)
         {
             for (int i = 0; i < len; i++)
             {
-                outString += dict[(dict.size() - jump + i) % dict.size()];
+                outString += dict[((int) dict.size() - jump + i) % (int) dict.size()];
             }
             outString += nextChar;
             dict.append(outString.substr(windowPointer, len + 1));
             windowPointer += len + 1;
-            if (dict.size() > DICTSIZE)
+            if ((int) dict.size() > DICTSIZE)
             {
                 dict.erase(0, len + 1);
             }
