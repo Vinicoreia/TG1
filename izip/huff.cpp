@@ -32,7 +32,7 @@ void calcCodeLengths(std::vector<std::pair<char, int>> &pairSymbCodeLength, std:
         return left.second < right.second;
     });
 
-    for (int i = 0; i < pairSymbCodeLength.size(); i++)
+    for (long unsigned int i = 0; i < pairSymbCodeLength.size(); i++)
     {
         int index = pairSymbCodeLength[i].second;
         codeLengths[index - 1] += 1;
@@ -45,7 +45,7 @@ void buildCodes(std::vector<std::pair<char, int>> &pairSymbCodeLength, std::vect
     int count, code, nCodes;
     code = 0;
 
-    for (int i = codeLengths.size() - 1; i >= 0; --i)
+    for (long unsigned int i = codeLengths.size() - 1; i >= 0; --i)
     {
         if (codeLengths.at(i) != 0)
         {
@@ -58,7 +58,7 @@ void buildCodes(std::vector<std::pair<char, int>> &pairSymbCodeLength, std::vect
     start_code[count - 1] = code;
     nCodes = codeLengths[count - 1];
     count--;
-    for (int i = count - 1; i >= 0; i--)
+    for (long unsigned int i = count - 1; i >= 0; i--)
     {
         code = code + nCodes;
         code = code >> 1;
@@ -69,7 +69,7 @@ void buildCodes(std::vector<std::pair<char, int>> &pairSymbCodeLength, std::vect
     int codeLen;
     std::string codeStr;
 
-    for (int i = 0; i < pairSymbCodeLength.size(); i++)
+    for (long unsigned int i = 0; i < pairSymbCodeLength.size(); i++)
     {
         codeLen = pairSymbCodeLength[i].second - 1;
         std::bitset<30> bs = start_code[codeLen];
@@ -86,7 +86,7 @@ std::string writeHuffmanBitString(std::vector<std::pair<char, int>> &pairSymbCod
     std::string huffmanBitString;
     /*HEADER*/
 
-    for (int i = 0; i < codeLengths.size(); i++)
+    for (long unsigned int i = 0; i < codeLengths.size(); i++)
     {
         if (codeLengths[i] == 0)
         {
@@ -107,7 +107,7 @@ std::string writeHuffmanBitString(std::vector<std::pair<char, int>> &pairSymbCod
 
     /*FIM DO HEADER*/
 
-    for (int i = 0; i < strBuffer.size(); i++)
+    for (long unsigned int i = 0; i < strBuffer.size(); i++)
     {
         huffmanBitString.append(mapSymbCodeLength[strBuffer[i]].first);
     }
@@ -139,7 +139,7 @@ void HuffmanDecode(std::string filenameIn, std::string filenameOut)
     std::vector<std::pair<char, int>> pairSymbCodeLength;                                                                      /* maps the codeLength to each symbol*/
     std::unordered_map<char, std::pair<std::string, int>> mapSymbCodeLength;
 
-    for (int i = 0; i < 30; i++)
+    for (long unsigned int i = 0; i < 30; i++)
     {
         if (bitString[strPointer] == '1')
         {
@@ -152,7 +152,7 @@ void HuffmanDecode(std::string filenameIn, std::string filenameOut)
         }
     }
 
-    for (int j = 0; j < codeLengths.size(); j++)
+    for (long unsigned int j = 0; j < codeLengths.size(); j++)
     {
         for (int i = 0; i < codeLengths[j]; i++)
         {
@@ -197,7 +197,7 @@ void HuffmanEncode(std::string filenameIn, std::string filenameOut, int encode)
     std::priority_queue<nodeChar *, std::vector<nodeChar *>, compareChar> heap;
     std::unordered_map<char, std::pair<std::string, int>> mapSymbCodeLength;
     struct nodeChar *nLeft, *nRight, *nTop;
-    for(int i=0; i< pairSymbProb.size(); i++){
+    for(long unsigned int i=0; i< pairSymbProb.size(); i++){
         heap.push(new nodeChar(pairSymbProb[i].first, pairSymbProb[i].second, true));
     }
     while(heap.size()!=1){

@@ -91,7 +91,7 @@ std::pair<uint8_t *, int> boyer_moore(uint8_t *string, uint32_t stringlen, uint8
     }
 
     i = patlen - 1;
-    while (i < stringlen)
+    while (i < (int)stringlen)
     {
         int j = patlen - 1;
         while (j >= 0 && (string[i] == pat[j]))
@@ -116,7 +116,7 @@ void Dictionary::updateDict(size_t offset){
     if(dpe >=filesize)
         return;
     dpe += offset;
-    if(dpe>DICTSIZE){
+    if((int)dpe>DICTSIZE){
         dpb = dpe-DICTSIZE;
     }
 }
@@ -139,7 +139,7 @@ void Lookahead::updateLook(size_t offset)
 Lookahead::Lookahead(int filesize){
     lpb = 1;
     lpe = 1;
-    if (filesize >= LOOKAHEADSIZE)
+    if ((int)filesize >= LOOKAHEADSIZE)
     {
         lpe += LOOKAHEADSIZE;
     }
@@ -156,9 +156,9 @@ void writeLZ77BitString(int offset, std::string match, uint8_t nextChar)
         bitString += "0";
         bitString.append(decimalToBitString(nextChar, 8));
     }
-    else if ((match.size() * 9 + 8) < (1 + DICTBITS + LOOKBITS + 8))
+    else if ((int)(match.size() * 9 + 8) < (1 + DICTBITS + LOOKBITS + 8))
     {
-        for (int j = 0; j < match.size(); j++)
+        for (long unsigned int j = 0; j < match.size(); j++)
         {
             bitString += "0"; /*FLAG*/
             bitString.append(decimalToBitString((uint8_t) match[j], 8));
@@ -235,7 +235,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
         }else{
 
             match += u8Buffer[lpb + i];
-            int circbuffer = dpb+p.second+i;
+            size_t circbuffer = dpb+p.second+i;
             if(circbuffer == dpe){
                 circbuffer -= (dpe-dpb);
             }
@@ -255,7 +255,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     }
 
     
-    if(match.size()>LOOKAHEADSIZE){
+    if((int)match.size()>LOOKAHEADSIZE){
         match.pop_back();
     }
     nchar = match[match.size() - 1];
@@ -326,7 +326,7 @@ void DecodeLZ77(std::string filenameIn, std::string filenameOut)
             dict += nextChar;
 
             windowPointer += 1;
-            if (dict.size() > DICTSIZE)
+            if ((int)dict.size() > DICTSIZE)
             {
                 dict.erase(0, 1);
             }
@@ -348,7 +348,7 @@ void DecodeLZ77(std::string filenameIn, std::string filenameOut)
             outString += nextChar;
             dict.append(outString.substr(windowPointer, len + 1));
             windowPointer += len + 1;
-            if (dict.size() > DICTSIZE)
+            if ((int)dict.size() > DICTSIZE)
             {
                 dict.erase(0, len + 1);
             }

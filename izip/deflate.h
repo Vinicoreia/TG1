@@ -11,7 +11,7 @@
 
 #define USIZE uint32_t
 #define SHIFT sizeof(USIZE)*4
-#define MASK (1<<SHIFT)-1
+#define MASK ((1<<SHIFT)-1)
 
 std::string offLenToBin(USIZE c);
 void mapCodesOffLen(struct nodeU32 *root, int len, std::vector<std::pair<USIZE, int>> &pairOffLenCodeLength);
