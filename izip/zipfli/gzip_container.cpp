@@ -2,11 +2,9 @@
 #include "zipfli.h"
 #include "gzip_container.h"
 #include "deflate.h"
-
-void ZipfliGzipCompress(const ZipfliOptions* options,
-                        const unsigned char* in, size_t insize,
-                        unsigned char** out, size_t* outsize) {
-  unsigned long crcvalue = CRC(in, insize);
+#include "util.h"
+void ZipfliGzipCompress() {
+  unsigned long crcvalue = CRC();
 
   unsigned char bp = 0; // TODO qq é isso?
 
