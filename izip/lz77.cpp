@@ -18,17 +18,18 @@ int DICTBITS = 0;
 int LOOKBITS = 0;
 
 void getWindowSize(){
-    std::string userInput;
-    std::cout << "Type the Dictionary Size and the Lookahead Size"
-              << "\n";
-    std::cout << "Dictionary Size: ";
-    getline(std::cin, userInput);
-    DICTSIZE = std::stoi(userInput);
-    std::cout << "Lookahead Size: ";
-    userInput.clear();
-    getline(std::cin, userInput);
-    LOOKAHEADSIZE = std::stoi(userInput);
-
+//     std::string userInput;
+//     std::cout << "Type the Dictionary Size and the Lookahead Size"
+//               << "\n";
+//     std::cout << "Dictionary Size: ";
+//     getline(std::cin, userInput);
+//     DICTSIZE = std::stoi(userInput);
+//     std::cout << "Lookahead Size: ";
+//     userInput.clear();
+//     getline(std::cin, userInput);
+//     LOOKAHEADSIZE = std::stoi(userInput);
+    DICTSIZE = 32767;
+    LOOKAHEADSIZE = 255;
     DICTBITS = floor(log2(DICTSIZE) + 1);
     LOOKBITS = floor(log2(LOOKAHEADSIZE) + 1);
 }
