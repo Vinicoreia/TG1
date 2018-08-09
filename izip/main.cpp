@@ -45,6 +45,9 @@ int main(int argc, char *argv[]){
             filenameOut.append(".lz77");
             EncodeLZ77(filenameIn, filenameOut);            
         }
+        else if( std::string(it) == "-lz77d"){
+            DecodeLZ77(filenameIn, filenameOut);            
+        }
     }
     
 
