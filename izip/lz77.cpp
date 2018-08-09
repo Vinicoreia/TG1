@@ -32,6 +32,7 @@ void getWindowSize(){
     LOOKAHEADSIZE = 255;
     DICTBITS = floor(log2(DICTSIZE) + 1);
     LOOKBITS = floor(log2(LOOKAHEADSIZE) + 1);
+    LOOKAHEADSIZE = LOOKAHEADSIZE + 3; //that's because we don't accept matches of size less than 3
 }
 
 void make_delta1(int *delta1, uint8_t *pat, int32_t patlen) {
@@ -151,13 +152,12 @@ Lookahead::Lookahead(int filesize){
 };
 
 void writeLZ77BitString(int offset, std::string match, uint8_t nextChar)
-{
-    if (offset == 0 or match.size() == 0)
+{   if (offset == 0 or match.size() == 0)
     {
         bitString += "0";
         bitString.append(decimalToBitString(nextChar, 8));
     }
-    else if ((match.size() * 9 + 8) < (1 + DICTBITS + LOOKBITS + 8))
+    else if (match.size() < 3)
     {
         for (int j = 0; j < match.size(); j++)
         {
@@ -171,7 +171,7 @@ void writeLZ77BitString(int offset, std::string match, uint8_t nextChar)
     {
         bitString += "1"; /*FLAG*/
         bitString.append(decimalToBitString(offset, DICTBITS));
-        bitString.append(decimalToBitString(match.size(), LOOKBITS));
+        bitString.append(decimalToBitString(match.size()-3, LOOKBITS));
         bitString.append(decimalToBitString(nextChar, 8));
     }
 }
@@ -342,6 +342,7 @@ void DecodeLZ77(std::string filenameIn, std::string filenameOut)
             nextChar = static_cast<char>(std::stoi(bitChar, 0, 2));
             jump = stoi(dictBits, 0, 2);
             len = stoi(lookaheadBits, 0, 2);
+            len = len + 3;
             for (int i = 0; i < len; i++)
             {
                 outString += dict[(dict.size() - jump + i) % dict.size()];
