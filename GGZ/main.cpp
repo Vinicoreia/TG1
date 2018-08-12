@@ -4,14 +4,14 @@
 #include <fstream>
 #include <utility>
 #include <vector>
+#include <cstring>
 
 #include "BWT.h"
 #include "MTF.h"
 
 #include "ArithmeticEncoding.h"
 
-#define BLOCKSIZE 16384	/*1024 | 2048 | 4096 | 8192 | 16384 | 32768 | 65536
-Memory needed +-		  1MB  | 4MB  | 16MB | 67MB | 268MB | 1GB   | 4GB  
+#define BLOCKSIZE 1048576	/*1024 | 2048 | 4096 | 8192 | 16384 | 32768 | 65536 | 1048576
 	
 	
 	2 - GATHER DATA
@@ -50,14 +50,14 @@ int Encode(string file1, string file2) {
 			memcpy(data.data, readvector.data(), readvector.size());
 			
 			//Apply BWT
-			unsigned short index = BWT::Transform(&data);
+			long long index = BWT::Transform(&data);
 			//Apply MTF
 			MTF::Encode(&data);
 			//Save to be written later
 			long long last = toWrite.size();
-			toWrite.resize(toWrite.size() + sizeof(unsigned short) + data.size*sizeof(uint8_t));
-			memcpy(toWrite.data() + last, &index, sizeof(unsigned short));
-			memcpy(toWrite.data() + last + sizeof(unsigned short), data.data, data.size * sizeof(uint8_t));
+			toWrite.resize(toWrite.size() + sizeof(long long) + data.size*sizeof(uint8_t));
+			memcpy(toWrite.data() + last, &index, sizeof(long long));
+			memcpy(toWrite.data() + last + sizeof(long long), data.data, data.size * sizeof(uint8_t));
 			//output.write((char*)&index, 2);
 			//output.write((char*)data.data, data.size * sizeof(uint8_t));
 
@@ -72,14 +72,14 @@ int Encode(string file1, string file2) {
 			data.data[i] = readvector[i];
 		}
 		//Apply BWT
-		unsigned short index = BWT::Transform(&data);
+		long long index = BWT::Transform(&data);
 		//Apply MTF
 		MTF::Encode(&data);
 		//Write out
 		long long last = toWrite.size();
-		toWrite.resize(toWrite.size() + sizeof(unsigned short) + data.size * sizeof(uint8_t));
-		memcpy(toWrite.data() + last, &index, sizeof(unsigned short));
-		memcpy(toWrite.data() + last + sizeof(unsigned short), data.data, data.size * sizeof(uint8_t));
+		toWrite.resize(toWrite.size() + sizeof(long long) + data.size * sizeof(uint8_t));
+		memcpy(toWrite.data() + last, &index, sizeof(long long));
+		memcpy(toWrite.data() + last + sizeof(long long), data.data, data.size * sizeof(uint8_t));
 		//output.write((char*)&index, 2);
 		//output.write((char*)data.data, readvector.size());
 
@@ -120,10 +120,13 @@ int Decode(string file1, string file2) {
 	ArithmeticEncoder::Decode(&input, &data);
 
 	for (int i = 0; i < data.size();) {
-		unsigned short index;
+		long long index;
 
 		//Read index for BWT reverse
-		index = ((data[i++]))|(data[i++]<<8);
+		memcpy(&index, data.data() + i, sizeof(long long));
+		//cout<<index<<endl;
+		i+= sizeof(long long);
+		//index = (data[i++])|((long long)data[i++]<<8)|((long long)data[i++]<<16)|((long long)data[i++]<<24)|((long long)data[i++]<<32)|((long long)data[i++]<<40)|((long long)data[i++]<<48)|((long long)data[i++]<<56);
 
 		//input.read((char*)&index, sizeof(unsigned short));
 		//Read bytes in MTF form
