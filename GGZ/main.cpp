@@ -11,12 +11,14 @@
 
 #include "ArithmeticEncoding.h"
 
-#define BLOCKSIZE 1048576	/*1024 | 2048 | 4096 | 8192 | 16384 | 32768 | 65536 | 1048576
+//#define BLOCKSIZE 1024	/*1024 | 2048 | 4096 | 8192 | 16384 | 32768 | 65536 | 1048576
 	
 	
-	2 - GATHER DATA
-	3 - FINISH
-*/
+//	2 - GATHER DATA
+//	3 - FINISH
+//*/
+
+long long BLOCKSIZE;
 using namespace std;
 
 int Encode(string file1, string file2) {
@@ -37,6 +39,8 @@ int Encode(string file1, string file2) {
 
 	vector<uint8_t> toWrite;
 	vector<uint8_t> readvector;
+	
+	long long blockn = 1;
 
 	while (input.peek() != EOF) {
 		uint8_t read;
@@ -62,6 +66,8 @@ int Encode(string file1, string file2) {
 			//output.write((char*)data.data, data.size * sizeof(uint8_t));
 
 			readvector.clear();
+			cout<<"\rEnd of Block "<<blockn<<"! Processed: "<<blockn*BLOCKSIZE<<"bytes";
+			blockn++;
 		}
 	}
 
@@ -187,15 +193,19 @@ int Decode(string file1, string file2) {
 int main(int argc, char** argv) {
 	string file1(""), file2(""), mode;
 	
-	if (argc == 1 || argc < 4) {
-		cout << "-e <input file name> <output file name>\n";
-		cout << "-d <input file name> <output file name>\n";
+	if (argc == 1 || argc < 5) {
+		cout << "-e <input file name> <output file name> <BLOCKSIZE>\n";
+		cout << "-d <input file name> <output file name> <BLOCKSIZE>\n";
+		cout << "Suggested blocksizes: 1024 | 2048 | 4096 | 8192 | 16384 | 32768 | 65536 | 131072 | 262144\n";
+		return 0;
 		cout << "Select mode: ";
 		cin >> mode;
 		cout << "Input file: ";
 		cin >> file1;
 		cout << "Output file: ";
 		cin >> file2;
+		cout << "Block size: ";
+		cin >> BLOCKSIZE;
 	}else
 		mode.assign(argv[1]);
 
@@ -209,6 +219,8 @@ int main(int argc, char** argv) {
 	
 	if (file2 == "")
 		file2.assign(argv[3]);
+	
+	BLOCKSIZE = atoi(argv[4]);
 
 	if (mode == "-e") {
 		Encode(file1, file2);
