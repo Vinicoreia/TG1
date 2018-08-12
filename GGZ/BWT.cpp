@@ -14,6 +14,10 @@ using namespace std;
 
 vector<uint8_t> original;
 
+
+
+
+
 int SortCompare(const vector<uint8_t> &a, const vector<uint8_t> &b) {
 	/*for (int i = 0; i < a.size(); i++) {
 	if (a[i] != b[i]) {
@@ -27,8 +31,8 @@ int SortCompare(const vector<uint8_t> &a, const vector<uint8_t> &b) {
 int SortCompare1(const long long a, const long long b) {
 	vector<uint8_t> vecA, vecB;
 
-	vecA.resize(original.size() );
-	vecB.resize(original.size() );
+	vecA.resize(original.size());
+	vecB.resize(original.size());
 
 	memcpy(vecA.data(), original.data() + a, original.size() - a);
 	memcpy(vecA.data() + original.size() - a, original.data(), a);
@@ -138,10 +142,11 @@ void BWT::Reverse(Data * toReverse, long long index)
 long long BWT::Transform(Data* toTransform) {
 	//vector<vector<uint8_t>> rotations(toTransform->size, vector<uint8_t>(toTransform->size));
 	vector<long long> rotations;
+	
 	original.resize(toTransform->size);
-
+	
+	memcpy(original.data(), toTransform->data, toTransform->size);
 	for (long long i = 0; i < toTransform->size; i++) {
-		original[i] = toTransform->data[i];
 		rotations.emplace_back(i);
 	}
 
