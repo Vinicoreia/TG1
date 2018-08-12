@@ -27,8 +27,8 @@ int SortCompare(const vector<uint8_t> &a, const vector<uint8_t> &b) {
 int SortCompare1(const long long a, const long long b) {
 	vector<uint8_t> vecA, vecB;
 
-	vecA.resize(original.size());
-	vecB.resize(original.size());
+	vecA.resize(original.size() );
+	vecB.resize(original.size() );
 
 	memcpy(vecA.data(), original.data() + a, original.size() - a);
 	memcpy(vecA.data() + original.size() - a, original.data(), a);
