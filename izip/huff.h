@@ -26,7 +26,7 @@ struct compareChar
 {
     bool operator()(nodeChar *leftNode, nodeChar *rightNode)
     {
-        return (leftNode->key_value > rightNode->key_value);
+        return (leftNode->key_value > rightNode->key_value and leftNode->code < rightNode->code or leftNode->key_value > rightNode->key_value);
     }
 };
 
@@ -52,7 +52,7 @@ struct compareU16
 {
     bool operator()(nodeU16 *leftNode, nodeU16 *rightNode)
     {
-        return (leftNode->key_value > rightNode->key_value);
+        return (leftNode->key_value > rightNode->key_value and leftNode->code < rightNode->code or leftNode->key_value > rightNode->key_value);
     }
 };
 
@@ -78,7 +78,7 @@ struct compareU32
 {
     bool operator()(nodeU32 *leftNode, nodeU32 *rightNode)
     {
-        return (leftNode->key_value > rightNode->key_value);
+        return (leftNode->key_value > rightNode->key_value and leftNode->code < rightNode->code or leftNode->key_value > rightNode->key_value);
     }
 };
 

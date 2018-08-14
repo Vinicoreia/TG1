@@ -41,6 +41,9 @@ int main(int argc, char *argv[]){
             filenameOut.append(".def");
             DeflateEncode(filenameIn, filenameOut);
         }
+        else if(std::string(it) == "-dd"){
+            DeflateDecode(filenameIn, filenameOut);
+        }
         else if( std::string(it) == "-lz77e"){
             filenameOut.append(".lz77");
             EncodeLZ77(filenameIn, filenameOut);            
