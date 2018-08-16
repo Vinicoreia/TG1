@@ -9,9 +9,11 @@
 #include "BWT.h"
 #include "MTF.h"
 
+#include "RunLength.h"
+
 #include "ArithmeticEncoding.h"
 
-#define BLOCKSIZE 16384	/*1024 | 2048 | 4096 | 8192 | 16384 | 32768 | 65536 
+#define BLOCKSIZE 65536	/*1024 | 2048 | 4096 | 8192 | 16384 | 32768 | 65536 
 						| 131072 | 262144| 1048576
 	
 	
@@ -92,6 +94,8 @@ int Encode(string file1, string file2) {
 		readvector.clear();
 	}
 
+	toWrite = RunLengthEncode(toWrite);
+
 	//output.write((char*)toWrite.data(), toWrite.size());
 	ArithmeticEncoder::Encode(&output, &toWrite);
 
@@ -124,6 +128,7 @@ int Decode(string file1, string file2) {
 	int counter = 0;
 
 	ArithmeticEncoder::Decode(&input, &data);
+	data = RunLengthDecode(data);
 
 	for (int i = 0; i < data.size();) {
 		long long index;
@@ -193,7 +198,7 @@ int Decode(string file1, string file2) {
 int main(int argc, char** argv) {
 	string file1(""), file2(""), mode;
 	
-	if (argc == 1 || argc < 5) {
+	if (argc == 1 || argc < 4) {
 		cout << "-e <input file name> <output file name>\n";
 		cout << "-d <input file name> <output file name>\n";
 		//cout << "Suggested blocksizes: 1024 | 2048 | 4096 | 8192 | 16384 | 32768 | 65536 | 131072 | 262144\n";
