@@ -27,6 +27,7 @@ class Dictionary{
         size_t dpb = 0; /*Dictionary pointer to begin of Dictionary*/
         size_t dpe = 0; /*Dictionary pointer to end of Dictionary*/
         void findBestMatch(int lpe, int lpb);/*This function has to return the Data to the lookahead*/
+        void addTriplas(size_t offset, std::string match, char nChar, int flag);
         std::deque<Data> triplas;
 };
 
