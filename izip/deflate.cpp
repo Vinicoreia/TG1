@@ -143,7 +143,11 @@ std::string WriteDeflateBitString(
     {
         aux = it.nextChar;
         aux = aux << SHIFT;
-        aux |= it.match.length();
+        if(it.match.length()==0){
+            aux |= it.match.length();
+        }else{
+            aux |= (it.match.length()-3);
+        }
         out.append(mapJumpCodeLength[it.offset].first);
         out.append(mapCharLenCodeLength[aux].first);
     }
@@ -187,9 +191,14 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode)
     {
         aux = it.nextChar;
         aux = aux << SHIFT;
-        aux |= it.match.length();
+        if(it.match.length()==0){
+            aux |= it.match.length();
+        }else{
+            aux |= (it.match.length()-3);
+        }
         bufferJump.push_back(it.offset);
         bufferCharLen.push_back(aux);
+
     }
 
     /*Huffman Part*/
@@ -384,7 +393,9 @@ void DeflateDecode(std::string filenameIn, std::string filenameOut)
         nextChar = charLenDecoding[k] >> SHIFT;
         len = charLenDecoding[k] & MASK;
         jump = jumpdecoding[k];
-
+        if(len!=0){
+            len+=3;
+        }
         if (jump == 0)
         {
             outString += nextChar;
