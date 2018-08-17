@@ -15,9 +15,6 @@ using namespace std;
 vector<uint8_t> original;
 
 
-
-
-
 int SortCompare(const vector<uint8_t> &a, const vector<uint8_t> &b) {
 	/*for (int i = 0; i < a.size(); i++) {
 	if (a[i] != b[i]) {
@@ -30,7 +27,6 @@ int SortCompare(const vector<uint8_t> &a, const vector<uint8_t> &b) {
 
 int SortCompare1(const long long a, const long long b) {
 	vector<uint8_t> vecA, vecB;
-
 	vecA.resize(original.size());
 	vecB.resize(original.size());
 
@@ -41,6 +37,15 @@ int SortCompare1(const long long a, const long long b) {
 	memcpy(vecB.data() + original.size() - b, original.data(), b);
 
 	return vecA < vecB;
+
+	/*long long mod = original.size();
+
+	for (long long i = 0; i < mod; i++) {
+		if (original[(a + i) % mod] != original[(b + i) % mod])
+			return original[(a + i) % mod] < original[(b + i) % mod];
+	}
+
+	return 0;*/
 
 	/*for (long long i = 0; i < original.size(); i++) {
 		if (vecA[i] != vecB[i]) {
