@@ -179,10 +179,19 @@ void writeLZ77BitString(int offset, std::string match, uint8_t nextChar)
 Dictionary::Dictionary(){
     dpe += 1;
     writeLZ77BitString(0, "", u8Buffer[0]);
-    triplas.emplace_back(0, "", u8Buffer[0],0);
+    addTriplas(0, "", u8Buffer[0],0);
 };
 
-
+void Dictionary::addTriplas(size_t offset, std::string match, char nChar, int flag){
+    if(match.size() <=3){
+        for(int i =0; i< match.size(); i++){
+            triplas.emplace_back(0, "", match[i], 0);
+        }
+    }else{
+        match.erase(0,3);
+        triplas.emplace_back(offset, match, nChar, 0);
+    }
+}
 
 void Dictionary::findBestMatch(int lpb, int lpe)
 {
@@ -193,7 +202,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     std::pair<uint8_t *, int> p;
     
     if(lpe-lpb==1){
-        triplas.emplace_back(0, "", u8Buffer[lpb], 0);
+        addTriplas(0, "", u8Buffer[lpb], 0);
         writeLZ77BitString(0, "", u8Buffer[lpb]);
         matchSz = 1;
         return;        
@@ -207,7 +216,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
         match.append((const char*)(u8Buffer+dpb+p.second), lpe-lpb);
         nchar = match[match.size() - 1];
         match.pop_back();
-        triplas.emplace_back(position, match, nchar, 0);
+        addTriplas(position, match, nchar, 0);
         writeLZ77BitString(position, match, nchar);
         matchSz = match.size()+1;
         return;
@@ -220,7 +229,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
         p = boyer_moore(u8Buffer+dpb, dpe-dpb, u8Buffer+lpb, i);   
         if(p.second==-1){
             if(i==1){
-                triplas.emplace_back(0, "", u8Buffer[lpb], 0);
+                addTriplas(0, "", u8Buffer[lpb], 0);
                 writeLZ77BitString(0, "", u8Buffer[lpb]);
                 matchSz = 1;
                 return;
@@ -228,7 +237,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
                 
                 nchar = match[match.size() - 1];
                 match.pop_back();
-                triplas.emplace_back(position, match, nchar, 0);
+                addTriplas(position, match, nchar, 0);
                 writeLZ77BitString(position, match, nchar);
                 matchSz = match.size() + 1;
                 return;
@@ -261,7 +270,7 @@ void Dictionary::findBestMatch(int lpb, int lpe)
     }
     nchar = match[match.size() - 1];
     match.pop_back();
-    triplas.emplace_back(position, match, nchar, 0);
+    addTriplas(position, match, nchar, 0);
     writeLZ77BitString(position, match, nchar);
     matchSz = match.size()+1;
     return;
