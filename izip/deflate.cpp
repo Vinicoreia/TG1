@@ -243,10 +243,13 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode)
 
     mapCodesUSIZE(heapCharLen.top(), 0, pairCharLenCodeLength); /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
     mapCodesUSIZE(heapJump.top(), 0, pairJumpCodeLength);       /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
-
+    for(auto it: pairCharLenCodeLength)
+        std::cout<<it.second<<" ";
+    for(auto it: pairJumpCodeLength)
+        std::cout<<it.second<<" ";
     calcUSIZECodeLengths(pairCharLenCodeLength, charLenCodeLengths);
     calcUSIZECodeLengths(pairJumpCodeLength, JumpCodeLengths);
-
+    
     buildUSIZECodes(pairCharLenCodeLength, charLenCodeLengths, mapCharLenCodeLength);
     buildUSIZECodes(pairJumpCodeLength, JumpCodeLengths, mapJumpCodeLength);
 
