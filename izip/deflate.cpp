@@ -6,7 +6,7 @@
 /*1- Como aplicar Burrows wheeler (antes e depois, só antes ou só depois)*/
 /*2- Como splitar, quantos blocos, a partir de qual tamanho*/
 /*3- lembrar do rle definido*/
-#define MAXCODESIZE 20
+#define MAXCODESIZE 10
 std::string USIZEToBin(USIZE c)
 {
     std::string charBin;
@@ -98,7 +98,8 @@ std::string WriteDeflateBitString(
 {
     int count = 0;
     /*HEADER*/
-    std::string out;
+    std::string out = "";
+
     for (int i = 0; i < charLenCodeLengths.size(); i++)
     {
         if (charLenCodeLengths[i] == 0)
@@ -108,7 +109,7 @@ std::string WriteDeflateBitString(
         else
         {
             out += "1";
-            out.append(decimalToBitString(charLenCodeLengths[i], 12));
+            out.append(decimalToBitString(charLenCodeLengths[i], 10));
         }
     }
 
@@ -126,7 +127,7 @@ std::string WriteDeflateBitString(
         else
         {
             out += "1";
-            out.append(decimalToBitString(jumpCodeLengths[i], 12));
+            out.append(decimalToBitString(jumpCodeLengths[i], 8));
         }
     }
 
@@ -164,47 +165,23 @@ std::string WriteDeflateBitString(
 
 /*Chamar LZ77 ENCODE com flag encode = 1*/
 
-void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode)
-{
-    /*LZ77 PART*/
-    /*This will put the triples in the strBuffer*/
-    std::deque<Data> codeTriples;
 
-    codeTriples = EncodeLZ77(filenameIn, filenameOut, 1);
+void DeflatePart(std::deque<Data> codeTriplesAux, std::vector<USIZE> bufferJump, std::vector<USIZE> bufferCharLen){
 
-    std::vector<USIZE> bufferJump;
-    std::vector<USIZE> bufferCharLen;
     std::string bufferChar;
     std::vector<std::pair<USIZE, long long>> pairJumpProb;    /*-*/
     std::vector<std::pair<USIZE, long long>> pairCharLenProb; /*-*/
     std::priority_queue<nodeU16 *, std::vector<nodeU16 *>, compareU16> heapCharLen;
     std::priority_queue<nodeU16 *, std::vector<nodeU16 *>, compareU16> heapJump;
     std::vector<std::pair<USIZE, int>> pairCharLenCodeLength;
-    std::vector<int> charLenCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    std::vector<int> charLenCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     std::vector<std::pair<USIZE, int>> pairJumpCodeLength;
-    std::vector<int> JumpCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    std::vector<int> JumpCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     std::unordered_map<USIZE, std::pair<std::string, int>> mapCharLenCodeLength;
     std::unordered_map<USIZE, std::pair<std::string, int>> mapJumpCodeLength;
 
-    USIZE aux = 0;
-    for (auto it : codeTriples)
-    {
-        aux = it.nextChar;
-        aux = aux << SHIFT;
-        if(it.match.length()==0){
-            aux |= it.match.length();
-        }else{
-            aux |= (it.match.length()-3);
-        }
-        bufferJump.push_back(it.offset);
-        bufferCharLen.push_back(aux);
-
-    }
-
-    /*Huffman Part*/
     pairCharLenProb = getFrequencyU16(bufferCharLen);
     pairJumpProb = getFrequencyU16(bufferJump);
-
     struct nodeU16 *nLeftC, *nRightC, *nTopC;
     for (int i = 0; i < pairCharLenProb.size(); i++)
     {
@@ -243,19 +220,62 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode)
 
     mapCodesUSIZE(heapCharLen.top(), 0, pairCharLenCodeLength); /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
     mapCodesUSIZE(heapJump.top(), 0, pairJumpCodeLength);       /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
-    for(auto it: pairCharLenCodeLength)
-        std::cout<<it.second<<" ";
-    for(auto it: pairJumpCodeLength)
-        std::cout<<it.second<<" ";
+    // for(auto it: pairCharLenCodeLength)
+    //     std::cout<<it.first<<" "<<it.second<<"\n";
+    // for(auto it: pairJumpCodeLength)
+    //     std::cout<<it.first<<" "<< it.second<<"\n";
     calcUSIZECodeLengths(pairCharLenCodeLength, charLenCodeLengths);
     calcUSIZECodeLengths(pairJumpCodeLength, JumpCodeLengths);
     
     buildUSIZECodes(pairCharLenCodeLength, charLenCodeLengths, mapCharLenCodeLength);
     buildUSIZECodes(pairJumpCodeLength, JumpCodeLengths, mapJumpCodeLength);
+    bitString += WriteDeflateBitString(codeTriplesAux, pairCharLenCodeLength, charLenCodeLengths, mapCharLenCodeLength, pairJumpCodeLength, JumpCodeLengths, mapJumpCodeLength);
+    return;
+}
 
+
+void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode)
+{
+    /*LZ77 PART*/
+    /*This will put the triples in the strBuffer*/
+    std::deque<Data> codeTriples;
+    std::deque<Data> codeTriplesAux;
+
+    codeTriples = EncodeLZ77(filenameIn, filenameOut, 1);
     bitString.clear();
-    bitString = WriteDeflateBitString(codeTriples, pairCharLenCodeLength, charLenCodeLengths, mapCharLenCodeLength, pairJumpCodeLength, JumpCodeLengths, mapJumpCodeLength);
-    if (encode == 0)
+    std::vector<USIZE> bufferJump;
+    std::vector<USIZE> bufferCharLen;
+
+    USIZE aux = 0;
+    int i =0;
+    int j=0;
+    while(i<codeTriples.size()){
+        for (j=i; j-i<300; j++)
+        {
+            if(j==codeTriples.size()){
+                break;
+            }
+            aux = codeTriples[j].nextChar;
+            aux = aux << SHIFT;
+            if(codeTriples[j].match.length()==0){
+                aux |= codeTriples[j].match.length();
+            }else{
+                aux |= (codeTriples[j].match.length()-3);
+            }
+            bufferJump.push_back(codeTriples[j].offset);
+            bufferCharLen.push_back(aux);
+            codeTriplesAux.emplace_back(codeTriples[j]);
+        }
+        i=j;
+
+        DeflatePart(codeTriplesAux, bufferJump, bufferCharLen);
+        codeTriplesAux.clear();
+        bufferJump.clear();
+        bufferCharLen.clear();
+
+    }
+    /*Huffman Part*/
+       if (encode == 0)
     {
         writeEncodedFile(filenameOut);
     }
