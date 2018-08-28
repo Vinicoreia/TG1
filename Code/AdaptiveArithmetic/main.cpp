@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 	}
 
 	time = clock();
-	art.AdaptiveEncode(&outfile, &data);
+	art.PPMEncode(&outfile, &data);
 	cout << "Time elapsed in Encoding: " << ((double)(clock() - time) / CLOCKS_PER_SEC) << endl;
 	infile.close();
 	outfile.close();
@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
 
 	data.clear();
 
-	art.AdaptiveDecode(&infile, &data);
+	art.PPMDecode(&infile, &data);
 
 	outfile.write((char*)data.data(), data.size() * sizeof(uint8_t));
 
