@@ -48,6 +48,7 @@ void Arithmetic::StaticEncode(fstream* output, std::vector<uint8_t>* input) {
 
 
 	for (size_t i = 0; i <= input->size(); i++) {
+		cout << "\rProcessing " << i << " of " << input->size();
 		if (i < input->size())
 			readAux = input->at(i);
 		//readAux = read;
@@ -170,6 +171,7 @@ void Arithmetic::AdaptiveEncode(fstream * output, vector<uint8_t>* input)
 	int readAux;
 
 	for (size_t i = 0; i <= input->size(); i++) {
+		cout << "\rProcessing " << i << " of " << input->size();
 		if (i < input->size())
 			readAux = input->at(i);
 		//readAux = read;
@@ -302,6 +304,7 @@ void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
 	int readAux;
 
 	for (size_t i = 0; i <= input->size(); i++) {
+		cout << "\rProcessing " << i << " of " << input->size();
 		if (i < input->size())
 			readAux = input->at(i);
 		//readAux = read;
