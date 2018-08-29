@@ -39,5 +39,7 @@ void readFileAsVector(std::string filename);
     std::vector<std::pair<char, long long>> getFrequencyU8(std::string buffer);
     std::vector<std::pair<uint16_t, long long>> getFrequencyU16(std::vector<uint16_t> buffer);
     std::vector<std::pair<uint32_t, long long>> getFrequencyU32(std::vector<uint32_t> buffer);
+    std::vector<std::pair<uint8_t, long long>> getFrequencyU8Vector(std::vector<uint8_t> buffer);
+
 
 #endif // IZIP_UTIL_H
