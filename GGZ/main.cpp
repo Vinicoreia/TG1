@@ -11,7 +11,7 @@
 
 #include "RunLength.h"
 
-#include "ArithmeticEncoding.h"
+#include "Arithmetic.h"
 
 #define BLOCKSIZE 65536	/*1024 | 2048 | 4096 | 8192 | 16384 | 32768 | 65536 
 						| 131072 | 262144| 1048576
@@ -43,6 +43,8 @@ int Encode(string file1, string file2) {
 	vector<uint8_t> readvector;
 	
 	long long blockn = 1;
+	
+	Arithmetic art;
 
 	while (input.peek() != EOF) {
 		uint8_t read;
@@ -51,29 +53,46 @@ int Encode(string file1, string file2) {
 		readvector.emplace_back(read);
 
 		if (readvector.size() == BLOCKSIZE) { //Read blocksize bytes
-			Data data(BLOCKSIZE);
+			//RLE
+			//readvector = RunLengthEncode(readvector);
 
-			memcpy(data.data, readvector.data(), readvector.size());
-			
+			Data data(readvector.size());
+
+			for (int i = 0; i < readvector.size(); i++) {
+				data.data[i] = readvector[i];
+			}
 			//Apply BWT
+
+			cout << "After run length: " << data.size << endl;
 			long long index = BWT::Transform(&data);
 			//Apply MTF
 			MTF::Encode(&data);
-			//Save to be written later
-			long long last = toWrite.size();
-			toWrite.resize(toWrite.size() + sizeof(long long) + data.size*sizeof(uint8_t));
-			memcpy(toWrite.data() + last, &index, sizeof(long long));
-			memcpy(toWrite.data() + last + sizeof(long long), data.data, data.size * sizeof(uint8_t));
-			//output.write((char*)&index, 2);
-			//output.write((char*)data.data, data.size * sizeof(uint8_t));
 
+			//Aply RLE
+			readvector = vector<uint8_t>(data.size);
+			memcpy(readvector.data(), data.data, data.size);
+			readvector = RunLengthEncode(readvector);
+
+			size_t blocksize = readvector.size();
+
+			//Write out
+			long long last = toWrite.size();
+
+			toWrite.resize(last + sizeof(size_t) + sizeof(long long));
+			memcpy(toWrite.data() + last, &blocksize, sizeof(size_t));
+			memcpy(toWrite.data() + last + sizeof(size_t), &index, sizeof(long long));
+			toWrite.insert(toWrite.end(), readvector.begin(), readvector.end());
 			readvector.clear();
+
 			cout<<"\rEnd of Block "<<blockn<<"! Processed: "<<blockn*BLOCKSIZE<<"bytes";
 			blockn++;
 		}
 	}
 
 	if (readvector.size() > 0) { //Read less than blocksize bytes and found eof
+		//RLE
+		//readvector = RunLengthEncode(readvector);
+
 		Data data(readvector.size());
 
 		for (int i = 0; i < readvector.size(); i++) {
@@ -83,21 +102,36 @@ int Encode(string file1, string file2) {
 		long long index = BWT::Transform(&data);
 		//Apply MTF
 		MTF::Encode(&data);
+
+		//Aply RLE
+		readvector.resize(data.size);
+		memcpy(readvector.data(), data.data, data.size);
+		readvector = RunLengthEncode(readvector);
+
+		size_t blocksize = readvector.size();
+
 		//Write out
 		long long last = toWrite.size();
-		toWrite.resize(toWrite.size() + sizeof(long long) + data.size * sizeof(uint8_t));
+
+		toWrite.resize(last + sizeof(size_t) + sizeof(long long));
+		memcpy(toWrite.data() + last, &blocksize, sizeof(size_t));
+		memcpy(toWrite.data() + last + sizeof(size_t), &index, sizeof(long long));
+		toWrite.insert(toWrite.end(), readvector.begin(), readvector.end());
+
+		/*toWrite.resize(toWrite.size() + sizeof(long long) + data.size * sizeof(uint8_t));
 		memcpy(toWrite.data() + last, &index, sizeof(long long));
-		memcpy(toWrite.data() + last + sizeof(long long), data.data, data.size * sizeof(uint8_t));
+		memcpy(toWrite.data() + last + sizeof(long long), data.data, data.size * sizeof(uint8_t));*/
 		//output.write((char*)&index, 2);
 		//output.write((char*)data.data, readvector.size());
 
 		readvector.clear();
 	}
 
-	toWrite = RunLengthEncode(toWrite);
+	//toWrite = RunLengthEncode(toWrite);
 
 	//output.write((char*)toWrite.data(), toWrite.size());
-	ArithmeticEncoder::Encode(&output, &toWrite);
+	art.AdaptiveEncode(&output, &toWrite);
+	//ArithmeticEncoder::Encode(&output, &toWrite);
 
 
 	input.close();
@@ -126,69 +160,62 @@ int Decode(string file1, string file2) {
 	vector<uint8_t> data;
 
 	int counter = 0;
+	
+	Arithmetic art;
 
-	ArithmeticEncoder::Decode(&input, &data);
-	data = RunLengthDecode(data);
+	//ArithmeticEncoder::Decode(&input, &data);
+	
+	art.AdaptiveDecode(&input, &data);
+	
+	//data = RunLengthDecode(data);
 
 	for (int i = 0; i < data.size();) {
 		long long index;
-
-		//Read index for BWT reverse
-		memcpy(&index, data.data() + i, sizeof(long long));
+		size_t blocksize;
+		//Read index for BWT reverse and blocksize
+		memcpy(&blocksize, data.data() + i, sizeof(size_t));
+		memcpy(&index, data.data() + i + sizeof(size_t), sizeof(long long));
 		//cout<<index<<endl;
-		i+= sizeof(long long);
+		i+= sizeof(long long) + sizeof(size_t);
 		//index = (data[i++])|((long long)data[i++]<<8)|((long long)data[i++]<<16)|((long long)data[i++]<<24)|((long long)data[i++]<<32)|((long long)data[i++]<<40)|((long long)data[i++]<<48)|((long long)data[i++]<<56);
 
 		//input.read((char*)&index, sizeof(unsigned short));
 		//Read bytes in MTF form
-		for (int j = 0; (j < BLOCKSIZE) && (i < data.size()); j++, i++) {
+		for (int j = 0; (j < blocksize) && (i < data.size()); j++, i++) {
 			readvector.emplace_back(data[i]);
 		}
 
+		//RLE
+		//Apply BWT
+		//Apply MTF
+		//Aply RLE
+
 		if (readvector.size() > 0) {
 			//Create the data to be passed to MTF and BWT reverses
-			Data aux(readvector.size());
+			/*Data aux(readvector.size());
 			for (int k = 0; k < readvector.size(); k++) {
 				aux.data[k] = readvector[k];
-			}
+			}*/
 
-			MTF::Decode(&aux);
-			BWT::Reverse(&aux, index);
 
-			output.write((char*)aux.data, aux.size);
-		}
-		readvector.clear();
-	}
+			readvector = RunLengthDecode(readvector);
 
-	/*
-	while (input.peek() != EOF) {
-		unsigned short index;
-		
-		//Read index for BWT reverse
-		input.read((char*)&index, sizeof(unsigned short));
-		//Read bytes in MTF form
-		for (int i = 0; (i < BLOCKSIZE) && (input.peek() != EOF); i++) {
-			uint8_t read;
-
-			input.read((char*)&read, sizeof(uint8_t));
-			readvector.emplace_back(read);
-		}
-
-		if (readvector.size() > 0) {
-			//Create the data to be passed to MTF and BWT reverses
 			Data aux(readvector.size());
-			for (int i = 0; i < readvector.size(); i++) {
-				aux.data[i] = readvector[i];
-			}
+			memcpy(aux.data, readvector.data(), readvector.size());
 
 			MTF::Decode(&aux);
 			BWT::Reverse(&aux, index);
 
-			output.write((char*)aux.data, aux.size);
+			readvector.resize(aux.size);
+			memcpy(readvector.data(), aux.data, aux.size);
+
+			//readvector = RunLengthDecode(readvector);
+
+			output.write((char*)readvector.data(), readvector.size());
 		}
 		readvector.clear();
 	}
-	*/
+
 	input.close();
 	output.close();
 

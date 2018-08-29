@@ -40,11 +40,6 @@ long long CumulativeCountTable::GetHigh(size_t index) {
 	return limits[index] + frequencies[index];
 }
 
-long long CumulativeCountTable::GetFrequency(size_t index)
-{
-	return frequencies[index];
-}
-
 int CumulativeCountTable::Search(long long value) {
 	long long start = 0;
 	long long end = frequencies.size();
