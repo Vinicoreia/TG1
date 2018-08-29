@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cstdint>
 #include <stack>
+#include <unordered_map>
 
 #define MASK 0xffffffffU
 #define TOP_MASK 0x80000000U
@@ -273,8 +274,17 @@ void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
 	order0.AddFrequency((size_t)alphabetSize);
 	order0.AddFrequency((size_t)alphabetSize + 1);
 
-	int currentOrder = 1;
+	int currentOrder = 0;
 	int nofOrders = 2;
+	int highestOrder = 0;
+
+	vector<unordered_map<uint64_t, CumulativeCountTable*>> orders(nofOrders);
+
+	uint8_t byteMask = 0xffU;
+	uint64_t currentContextMask = 0x0U;
+	uint64_t currentContext = 0;
+
+	orders[0][0] = new CumulativeCountTable(order0);
 
 	if (!input) {
 		std::cout << "Could not open input file!\n";
@@ -301,26 +311,59 @@ void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
 
 		//Search for longest context
 		for (;;) {
-			CumulativeCountTable* currentTable = (currentOrder-1 == 0) ? &order0 : &orderM1;
+			CumulativeCountTable* currentTable = (currentOrder == -1) ? 
+				&orderM1:
+				orders[currentOrder][currentContext&currentContextMask];
+
 			if (currentTable->GetFrequency(readAux) == 0) {
 				//not in current context, 
 				//write escape signal, update table, go to a lower context
 				WriteSymbol((int)alphabetSize, *currentTable);
-				currentOrder--;
+
 				currentTable->AddFrequency(readAux);
+				
+				if (currentOrder < nofOrders - 1) {
+					uint64_t auxMask = (currentContextMask<<8)| 0xff;
+					uint64_t indexAux = ((currentContext<<8)|(uint8_t)readAux) & auxMask;
+
+					if (orders[currentOrder + 1][indexAux] == NULL) {
+						orders[currentOrder + 1][indexAux] = new CumulativeCountTable(order0);
+						//orders[currentOrder + 1][indexAux]->AddFrequency(readAux);
+					}
+
+					if (currentOrder + 1 > highestOrder)
+						highestOrder = currentOrder + 1;
+				}
+
+				currentOrder--;
+				currentContextMask >>= 8;
 			}
 			else {
 				//In contex, so write symbol, add to the frequency and update the context
 				WriteSymbol(readAux, *currentTable);
-				if (currentOrder != 0) {
+
+				/*if (currentOrder != 0) {
 					currentTable->AddFrequency(readAux);
+				}*/
+
+				uint64_t auxMask = currentContextMask;
+				for (int k = currentOrder; k >= 0; k--) {
+					orders[k][auxMask&currentContext]->AddFrequency(readAux);
+					auxMask >>= 8;
 				}
-				currentOrder += (currentOrder + 1 == nofOrders)?0:1;
+
+				currentOrder = highestOrder;
+				currentContextMask = 0;
+				for (int k = 0; k < currentOrder; k++) {
+					currentContextMask <<= 8;
+					currentContextMask |= 0xffU;
+				}
 				break;
 			}
 		}
 
-		//WriteSymbol(readAux, order0);
+		currentContext <<= 8;
+		currentContext |= (uint8_t)readAux;
 	}
 
 	WriteBits(1);
@@ -335,12 +378,21 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 	order0.AddFrequency((size_t)alphabetSize);
 	order0.AddFrequency((size_t)alphabetSize + 1);
 
-	stack<CumulativeCountTable*> previousContexts;
-
-	int currentOrder = 1;
+	int currentOrder = 0;
 	int nofOrders = 2;
+	int highestOrder = 0;
 
-	CumulativeCountTable* currentContext = &order0;
+	vector<unordered_map<uint64_t, CumulativeCountTable*>> orders(nofOrders);
+
+	uint8_t byteMask = 0xffU;
+	uint64_t currentContextMask = 0x0U;
+	uint64_t currentContext = 0;
+
+	orders[0][0] = new CumulativeCountTable(order0);
+
+	CumulativeCountTable* currentTable = orders[0][0];
+
+	stack<CumulativeCountTable*> previousContexts;
 
 	output->clear();
 
@@ -364,17 +416,19 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 	int symbol = 0;
 
 	for (;;) {
-		currentContext = (currentOrder - 1 == 0) ? &order0 : &orderM1;
+		CumulativeCountTable* currentTable = (currentOrder == -1) ?
+			&orderM1 :
+			orders[currentOrder][currentContext&currentContextMask];
 
 		unsigned long long range = high - low + 1;
-		unsigned long long value = ((currentCode - low + 1) * currentContext->count - 1) / range;
+		unsigned long long value = ((currentCode - low + 1) * currentTable->count - 1) / range;
 
 		//Get current symbol.
-		symbol = currentContext->Search((long long)value);
+		symbol = currentTable->Search((long long)value);
 
 		//Update the range
-		unsigned long long nLow = low + (range * currentContext->GetLow(symbol)) / currentContext->count;
-		high = low + range * currentContext->GetHigh(symbol) / currentContext->count - 1;
+		unsigned long long nLow = low + (range * currentTable->GetLow(symbol)) / currentTable->count;
+		high = low + range * currentTable->GetHigh(symbol) / currentTable->count - 1;
 		low = nLow;
 
 		//While MSB are equal write bit on file
@@ -392,26 +446,63 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 
 		if (symbol == alphabetSize + 1)
 			break;
+
 		if (symbol == alphabetSize) {
 			//If escape symbol then decrement the current order
 			currentOrder--;
-			previousContexts.push(currentContext);
+			currentContextMask >>= 8;
+			previousContexts.push(currentTable);
 			continue;
 		}
+
 		//else the current symbol is in the current order, then add to the order and increment the order
 		uint8_t toWrite = (uint8_t)symbol;
-
+		
 		//Add thew appearance of this symbol in the higher orders
 		while (!previousContexts.empty()) {
 			previousContexts.top()->AddFrequency(toWrite);
 			previousContexts.pop();
 		}
-		//Add appearence to current order if the order isn't the order -1
-		if (currentOrder > 0) {
-			currentContext->AddFrequency(toWrite);
+		
+		//Add new context if needed
+		for (int i = highestOrder; i >= currentOrder; i--) {
+			if (i < nofOrders - 1) {
+				uint64_t auxMask = 0;
+				for (int j = 0; j <= i; j++) {
+					auxMask = (auxMask << 8) | 0xff;
+				}
+
+				uint64_t indexAux = ((currentContext<<8)|toWrite) & auxMask;
+
+				if (orders[i + 1][indexAux] == NULL) {
+					orders[i + 1][indexAux] = new CumulativeCountTable(order0);
+				}
+
+				if (i + 1 > highestOrder)
+					highestOrder = i + 1;
+			}
 		}
-		currentOrder += (currentOrder + 1 == nofOrders) ? 0 : 1;
+
+		//Add appearence to current order if the order isn't the order -1
+		uint64_t auxMask = currentContextMask;
+		//Add appearances in lower contexts
+		for (int k = currentOrder; k >= 0; k--) {
+			orders[k][auxMask&currentContext]->AddFrequency(toWrite);
+			auxMask >>= 8;
+		}
+
+		currentOrder = highestOrder;
+		currentContextMask = 0;
+		for (int k = 0; k < currentOrder; k++) {
+			currentContextMask <<= 8;
+			currentContextMask |= 0xffU;
+		}
+
 		output->emplace_back(toWrite);
+
+		currentContext <<= 8;
+		currentContext |= toWrite;
+
 	}
 }
 
