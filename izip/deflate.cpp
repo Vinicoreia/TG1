@@ -18,7 +18,7 @@ std::string USIZEToBin(USIZE c)
     return charBin;
 }
 
-void mapCodesUSIZE(struct nodeU16 *root, int len, std::vector<std::pair<USIZE, int>> &pairCodeLength)
+void mapCodesUSIZE(struct nodeChar *root, int len, std::vector<std::pair<USIZE, int>> &pairCodeLength)
 {
     if (!root)
         return;
@@ -99,68 +99,115 @@ void buildUSIZECodes(std::vector<std::pair<USIZE, int>> &pairOffLenCodeLength, s
 
 std::string WriteDeflateBitString(
     std::deque<Data> &codeTriples,
-    std::vector<std::pair<USIZE, int>> &pairCharLenCodeLength,
-    std::vector<int> &charLenCodeLengths,
-    std::unordered_map<USIZE, std::pair<std::string, int>> &mapCharLenCodeLength,
-    std::vector<std::pair<USIZE, int>> &pairJumpCodeLength,
-    std::vector<int> &jumpCodeLengths,
-    std::unordered_map<USIZE, std::pair<std::string, int>> &mapJumpCodeLength)
+    std::vector<std::pair<USIZE, int>> &pairJumpHighCodeLength,
+    std::vector<int> &jumpHighCodeLengths,
+    std::unordered_map<USIZE, std::pair<std::string, int>> &mapjumpHighCodeLength,
+
+    std::vector<std::pair<USIZE, int>> &pairJumpLowCodeLength,
+    std::vector<int> &jumpLowCodeLengths,
+    std::unordered_map<USIZE, std::pair<std::string, int>> &mapjumpLowCodeLength,
+
+
+    std::vector<std::pair<USIZE, int>> &pairCharCodeLength,
+    std::vector<int> &charCodeLengths,
+    std::unordered_map<USIZE, std::pair<std::string, int>> &mapCharCodeLength,
+
+    std::vector<std::pair<USIZE, int>> &pairLenCodeLength,
+    std::vector<int> &lenCodeLengths,
+    std::unordered_map<USIZE, std::pair<std::string, int>> &mapLenCodeLength)
 {
     int count = 0;
     /*HEADER*/
     std::string out = "";
 
-    for (int i = 0; i < charLenCodeLengths.size(); i++)
+    for (int i = 0; i < jumpHighCodeLengths.size(); i++)
     {
-        if (charLenCodeLengths[i] == 0)
+        if (jumpHighCodeLengths[i] == 0)
         {
             out += "0";
         }
         else
         {
             out += "1";
-            out.append(decimalToBitString(charLenCodeLengths[i], 10));
+            out.append(decimalToBitString(jumpHighCodeLengths[i], 10));
         }
     }
 
-    // for (auto it : pairCharLenCodeLength)
+    // for (auto it : pairJumpHighCodeLength)
     // {
     //     out.append(USIZEToBin(it.first));
     // }
 
-    for (int i = 0; i < jumpCodeLengths.size(); i++)
+   for (int i = 0; i < jumpLowCodeLengths.size(); i++)
     {
-        if (jumpCodeLengths[i] == 0)
+        if (jumpLowCodeLengths[i] == 0)
         {
             out += "0";
         }
         else
         {
             out += "1";
-            out.append(decimalToBitString(jumpCodeLengths[i], 8));
+            out.append(decimalToBitString(jumpLowCodeLengths[i], 10));
         }
     }
 
-    // for (auto it : pairJumpCodeLength)
+    // for (auto it : pairJumpLowCodeLength)
     // {
     //     out.append(USIZEToBin(it.first));
     // }
 
-    /*FIM DO HEADER*/
+
+    for (int i = 0; i < charCodeLengths.size(); i++)
+    {
+        if (charCodeLengths[i] == 0)
+        {
+            out += "0";
+        }
+        else
+        {
+            out += "1";
+            out.append(decimalToBitString(charCodeLengths[i], 8));
+        }
+    }
+
+    // for (auto it : pairCharCodeLength)
+    // {
+    //     out.append(USIZEToBin(it.first));
+    // }
+
+    for (int i = 0; i < lenCodeLengths.size(); i++)
+    {
+        if (lenCodeLengths[i] == 0)
+        {
+            out += "0";
+        }
+        else
+        {
+            out += "1";
+            out.append(decimalToBitString(lenCodeLengths[i], 8));
+        }
+    }
+
+    // for (auto it : pairLenCodeLength)
+    // {
+    //     out.append(USIZEToBin(it.first));
+    // }
+    // /*FIM DO HEADER*/
 
     USIZE aux;
 
     for (auto it : codeTriples)
-    {
-        aux = it.nextChar;
-        aux = aux << SHIFT;
+    {   
+        out.append(mapjumpHighCodeLength[(it.offset >>8)].first);
+        out.append(mapjumpLowCodeLength[(it.offset&MASK)].first);
+        
         if(it.match.length()==0){
-            aux |= it.match.length();
+            out.append(mapLenCodeLength[it.match.length()].first);
         }else{
-            aux |= (it.match.length()-3);
+            out.append(mapLenCodeLength[it.match.length()-3].first);
         }
-        out.append(mapJumpCodeLength[it.offset].first);
-        out.append(mapCharLenCodeLength[aux].first);
+        
+        out.append(mapCharCodeLength[it.nextChar].first);
     }
 
     while (((out.size() + 3) % 8) != 0)
@@ -176,73 +223,142 @@ std::string WriteDeflateBitString(
 /*Chamar LZ77 ENCODE com flag encode = 1*/
 
 
-void DeflatePart(std::deque<Data> codeTriplesAux, std::vector<USIZE> bufferJump, std::vector<USIZE> bufferCharLen){
+void DeflatePart(   std::deque<Data> codeTriplesAux, 
+                    std::vector<USIZE> bufferChar, 
+                    std::vector<USIZE> bufferLen,
+                    std::vector<USIZE> bufferJumpHigh,
+                    std::vector<USIZE> bufferJumpLow
+                    ){
 
-    std::string bufferChar;
-    std::vector<std::pair<USIZE, long long>> pairJumpProb;    /*-*/
-    std::vector<std::pair<USIZE, long long>> pairCharLenProb; /*-*/
-    std::priority_queue<nodeU16 *, std::vector<nodeU16 *>, compareU16> heapCharLen;
-    std::priority_queue<nodeU16 *, std::vector<nodeU16 *>, compareU16> heapJump;
-    std::vector<std::pair<USIZE, int>> pairCharLenCodeLength;
-    std::vector<int> charLenCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-    std::vector<std::pair<USIZE, int>> pairJumpCodeLength;
-    std::vector<int> JumpCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-    std::unordered_map<USIZE, std::pair<std::string, int>> mapCharLenCodeLength;
-    std::unordered_map<USIZE, std::pair<std::string, int>> mapJumpCodeLength;
+    std::vector<std::pair<USIZE, long long>> pairJumpHighProb;    
+    std::vector<std::pair<USIZE, long long>> pairJumpLowProb;    
+    std::vector<std::pair<USIZE, long long>> pairCharProb; 
+    std::vector<std::pair<USIZE, long long>> pairLenProb; 
+    std::priority_queue<nodeChar *, std::vector<nodeChar *>, compareChar> heapChar;
+    std::priority_queue<nodeChar *, std::vector<nodeChar *>, compareChar> heapJumpHigh;
+    std::priority_queue<nodeChar *, std::vector<nodeChar *>, compareChar> heapJumpLow;
+    std::priority_queue<nodeChar *, std::vector<nodeChar *>, compareChar> heapLen;
+    std::vector<std::pair<USIZE, int>> pairJumpHighCodeLength;
+    std::vector<std::pair<USIZE, int>> pairJumpLowCodeLength;
+    std::vector<std::pair<USIZE, int>> pairCharCodeLength;
+    std::vector<std::pair<USIZE, int>> pairLenCodeLength;
+    std::vector<int> jumpHighCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    std::vector<int> jumpLowCodeLengths  = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    std::vector<int> charCodeLengths     = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    std::vector<int> lenCodeLengths      = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+   
+    std::unordered_map<USIZE, std::pair<std::string, int>> mapJumpHighCodeLength;
+    std::unordered_map<USIZE, std::pair<std::string, int>> mapJumpLowCodeLength;
+    std::unordered_map<USIZE, std::pair<std::string, int>> mapCharCodeLength;
+    std::unordered_map<USIZE, std::pair<std::string, int>> mapLenCodeLength;
 
-    pairCharLenProb = getFrequencyU16(bufferCharLen);
-    pairJumpProb = getFrequencyU16(bufferJump);
-    struct nodeU16 *nLeftC, *nRightC, *nTopC;
-    for (int i = 0; i < pairCharLenProb.size(); i++)
+    pairJumpHighProb = getFrequencyU8Vector(bufferJumpHigh);
+    pairJumpLowProb = getFrequencyU8Vector(bufferJumpLow);
+    pairCharProb = getFrequencyU8Vector(bufferChar);
+    pairLenProb = getFrequencyU8Vector(bufferLen);
+
+
+    struct nodeChar *nLeftJH, *nRightJH, *nTopJH;
+    for (int i = 0; i < pairJumpHighProb.size(); i++)
     {
-        heapCharLen.push(new nodeU16(pairCharLenProb[i].first, pairCharLenProb[i].second, true));
+        heapJumpHigh.push(new nodeChar(pairJumpHighProb[i].first, pairJumpHighProb[i].second, true));
     }
 
-    struct nodeU16 *nLeftOL, *nRightOL, *nTopOL;
-    for (int i = 0; i < pairJumpProb.size(); i++)
+    struct nodeChar *nLeftJL, *nRightJL, *nTopJL;
+    for (int i = 0; i < pairJumpLowProb.size(); i++)
     {
-        heapJump.push(new nodeU16(pairJumpProb[i].first, pairJumpProb[i].second, true));
+        heapJumpLow.push(new nodeChar(pairJumpLowProb[i].first, pairJumpLowProb[i].second, true));
+    }
+    
+    struct nodeChar *nLeftC, *nRightC, *nTopC;
+    for (int i = 0; i < pairCharProb.size(); i++)
+    {
+        heapChar.push(new nodeChar(pairCharProb[i].first, pairCharProb[i].second, true));
     }
 
-    while (heapCharLen.size() != 1)
+    struct nodeChar *nLeftL, *nRightL, *nTopL;
+    for (int i = 0; i < pairLenProb.size(); i++)
     {
-        nLeftC = heapCharLen.top();
-        heapCharLen.pop();
-        nRightC = heapCharLen.top();
-        heapCharLen.pop();
-        nTopC = new nodeU16((USIZE)0x1f, nLeftC->key_value + nRightC->key_value, false);
+        heapLen.push(new nodeChar(pairLenProb[i].first, pairLenProb[i].second, true));
+    }
+
+    while (heapJumpHigh.size() != 1)
+    {
+        nLeftJH = heapJumpHigh.top();
+        heapJumpHigh.pop();
+        nRightJH = heapJumpHigh.top();
+        heapJumpHigh.pop();
+        nTopJH = new nodeChar((USIZE)0x1f, nLeftJH->key_value + nRightJH->key_value, false);
+        nTopJH->left = nLeftJH;
+        nTopJH->right = nRightJH;
+        heapJumpHigh.push(nTopJH);
+    }
+
+    while (heapJumpLow.size() != 1)
+    {
+        nLeftJL = heapJumpLow.top();
+        heapJumpLow.pop();
+        nRightJL = heapJumpLow.top();
+        heapJumpLow.pop();
+        nTopJL = new nodeChar((USIZE)0x1f, nLeftJL->key_value + nRightJL->key_value, false);
+        nTopJL->left = nLeftJL;
+        nTopJL->right = nRightJL;
+        heapJumpLow.push(nTopJL);
+    }
+    
+    while (heapChar.size() != 1)
+    {
+        nLeftC = heapChar.top();
+        heapChar.pop();
+        nRightC = heapChar.top();
+        heapChar.pop();
+        nTopC = new nodeChar((USIZE)0x1f, nLeftC->key_value + nRightC->key_value, false);
         nTopC->left = nLeftC;
         nTopC->right = nRightC;
-        heapCharLen.push(nTopC);
+        heapChar.push(nTopC);
     }
 
-    while (heapJump.size() != 1)
+    while (heapLen.size() != 1)
     {
-        nLeftOL = heapJump.top();
-        heapJump.pop();
-        nRightOL = heapJump.top();
-        heapJump.pop();
-        nTopOL = new nodeU16((USIZE)0x1f, nLeftOL->key_value + nRightOL->key_value, false);
-        nTopOL->left = nLeftOL;
-        nTopOL->right = nRightOL;
-        heapJump.push(nTopOL);
+        nLeftL = heapLen.top();
+        heapLen.pop();
+        nRightL = heapLen.top();
+        heapLen.pop();
+        nTopL = new nodeChar((USIZE)0x1f, nLeftL->key_value + nRightL->key_value, false);
+        nTopL->left = nLeftL;
+        nTopL->right = nRightL;
+        heapLen.push(nTopL);
     }
 
-    mapCodesUSIZE(heapCharLen.top(), 0, pairCharLenCodeLength); /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
-    mapCodesUSIZE(heapJump.top(), 0, pairJumpCodeLength);       /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
-    calcUSIZECodeLengths(pairCharLenCodeLength, charLenCodeLengths);
-    calcUSIZECodeLengths(pairJumpCodeLength, JumpCodeLengths);
-    for(auto it: charLenCodeLengths){
-        std::cout<<it<<" ";
-    }
-    std::cout<<"\n";
-    for(auto it: JumpCodeLengths){
-        std::cout<<it<<" ";
-    }
-    std::cout<<"\n";
-    buildUSIZECodes(pairJumpCodeLength, JumpCodeLengths, mapJumpCodeLength);
-    buildUSIZECodes(pairCharLenCodeLength, charLenCodeLengths, mapCharLenCodeLength);
-    bitString += WriteDeflateBitString(codeTriplesAux, pairCharLenCodeLength, charLenCodeLengths, mapCharLenCodeLength, pairJumpCodeLength, JumpCodeLengths, mapJumpCodeLength);
+    mapCodesUSIZE(heapJumpHigh.top(), 0, pairJumpHighCodeLength); /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
+    mapCodesUSIZE(heapJumpLow.top(), 0, pairJumpLowCodeLength);       /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
+    mapCodesUSIZE(heapChar.top(), 0, pairCharCodeLength); /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
+    mapCodesUSIZE(heapLen.top(), 0, pairLenCodeLength);       /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
+    
+    calcUSIZECodeLengths(pairJumpHighCodeLength, jumpHighCodeLengths);
+    calcUSIZECodeLengths(pairJumpLowCodeLength, jumpLowCodeLengths);
+    calcUSIZECodeLengths(pairCharCodeLength, charCodeLengths);
+    calcUSIZECodeLengths(pairLenCodeLength, lenCodeLengths);
+
+    buildUSIZECodes(pairJumpHighCodeLength, jumpHighCodeLengths, mapJumpHighCodeLength);
+    buildUSIZECodes(pairJumpLowCodeLength, jumpLowCodeLengths, mapJumpLowCodeLength);
+    buildUSIZECodes(pairCharCodeLength, charCodeLengths, mapCharCodeLength);
+    buildUSIZECodes(pairLenCodeLength, lenCodeLengths, mapLenCodeLength);
+    
+    bitString += WriteDeflateBitString(
+    codeTriplesAux,
+    pairJumpHighCodeLength,
+    jumpHighCodeLengths,
+    mapJumpHighCodeLength,
+    pairJumpLowCodeLength,
+    jumpLowCodeLengths,
+    mapJumpLowCodeLength,
+    pairCharCodeLength,
+    charCodeLengths,
+    mapCharCodeLength,
+    pairLenCodeLength,
+    lenCodeLengths,
+    mapLenCodeLength);
     return;
 }
 
@@ -256,8 +372,10 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode)
 
     codeTriples = EncodeLZ77(filenameIn, filenameOut, 1);
     bitString.clear();
-    std::vector<USIZE> bufferJump;
-    std::vector<USIZE> bufferCharLen;
+    std::vector<USIZE> bufferJumpHigh;
+    std::vector<USIZE> bufferJumpLow;
+    std::vector<USIZE> bufferChar;
+    std::vector<USIZE> bufferLen;
 
     USIZE aux = 0;
     int i =0;
@@ -268,23 +386,24 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode)
             if(j==codeTriples.size()){
                 break;
             }
-            aux = codeTriples[j].nextChar;
-            aux = aux << SHIFT;
             if(codeTriples[j].match.length()==0){
-                aux |= codeTriples[j].match.length();
+                bufferLen.push_back(codeTriples[j].match.length());
             }else{
-                aux |= (codeTriples[j].match.length()-3);
+                bufferLen.push_back(codeTriples[j].match.length()-3);
             }
-            bufferJump.push_back(codeTriples[j].offset);
-            bufferCharLen.push_back(aux);
+            bufferJumpHigh.push_back((codeTriples[j].offset >> 8));
+            bufferJumpLow.push_back((codeTriples[j].offset) & MASK);
+            bufferChar.push_back(codeTriples[j].nextChar);
             codeTriplesAux.emplace_back(codeTriples[j]);
         }
         i=j;
 
-        DeflatePart(codeTriplesAux, bufferJump, bufferCharLen);
+        DeflatePart(codeTriplesAux, bufferChar, bufferLen, bufferJumpHigh,  bufferJumpLow);
         codeTriplesAux.clear();
-        bufferJump.clear();
-        bufferCharLen.clear();
+        bufferChar.clear();  
+        bufferLen.clear();
+        bufferJumpHigh.clear();
+        bufferJumpLow.clear();
 
     }
     /*Huffman Part*/
@@ -306,8 +425,8 @@ void DeflateDecode(std::string filenameIn, std::string filenameOut)
     std::string decoded;
     std::vector<std::pair<USIZE, long long>> pairJumpProb;    /*-*/
     std::vector<std::pair<USIZE, long long>> pairCharLenProb; /*-*/
-    std::priority_queue<nodeU16 *, std::vector<nodeU16 *>, compareU16> heapCharLen;
-    std::priority_queue<nodeU16 *, std::vector<nodeU16 *>, compareU16> heapJump;
+    std::priority_queue<nodeChar *, std::vector<nodeChar *>, compareChar> heapCharLen;
+    std::priority_queue<nodeChar *, std::vector<nodeChar *>, compareChar> heapJump;
     std::vector<std::pair<USIZE, int>> pairCharLenCodeLength;
     std::vector<int> charLenCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     std::vector<std::pair<USIZE, int>> pairJumpCodeLength;
