@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <cstdint>
 #include <algorithm>
+#include <queue>
 #include <cstring>
 
 #include "BWT.h"
@@ -14,6 +15,19 @@ using namespace std;
 
 vector<uint8_t> original;
 
+
+typedef struct slices {
+	int64_t c[2];
+	size_t p;
+}Slices;
+
+int SliceCmp(Slices a, Slices b) {
+	return (a.c[0] == b.c[0]) ? (a.c[1] < b.c[1]) : (a.c[0] < b.c[0]);
+}
+
+int SliceEq(Slices a, Slices b) {
+	return (a.c[0] == b.c[0] && a.c[1] == b.c[1]);
+}
 
 int SortCompare(const vector<uint8_t> &a, const vector<uint8_t> &b) {
 	/*for (int i = 0; i < a.size(); i++) {
@@ -37,22 +51,10 @@ int SortCompare1(const long long a, const long long b) {
 	memcpy(vecB.data() + original.size() - b, original.data(), b);
 
 	return vecA < vecB;
+}
 
-	/*long long mod = original.size();
-
-	for (long long i = 0; i < mod; i++) {
-		if (original[(a + i) % mod] != original[(b + i) % mod])
-			return original[(a + i) % mod] < original[(b + i) % mod];
-	}
-
-	return 0;*/
-
-	/*for (long long i = 0; i < original.size(); i++) {
-		if (vecA[i] != vecB[i]) {
-			return vecA[i] - vecB[i];
-		}
-	}
-	return 0;*/
+bool SortCompareF(int& a, int& b) {
+	return original[a] < original[b];
 }
 
 int PairCompare(pair<uint8_t, int> &a, pair<uint8_t, int> &b) {
@@ -145,15 +147,67 @@ void BWT::Reverse(Data * toReverse, long long index)
 
 
 long long BWT::Transform(Data* toTransform) {
-	//vector<vector<uint8_t>> rotations(toTransform->size, vector<uint8_t>(toTransform->size));
-	vector<long long> rotations;
-	
+	vector<int64_t> previous(toTransform->size);
+	vector<Slices> slices(toTransform->size);
+
 	original.resize(toTransform->size);
-	
 	memcpy(original.data(), toTransform->data, toTransform->size);
-	for (long long i = 0; i < toTransform->size; i++) {
-		rotations.emplace_back(i);
+
+	vector<pair<uint8_t, int>> positions;
+
+	vector<queue<size_t>> places(256);
+
+	for (int i = 0; i < toTransform->size; i++) {
+		positions.emplace_back(make_pair(toTransform->data[i], i));
 	}
+
+	sort(positions.begin(), positions.end());
+
+	int pos[1<<(sizeof(uint8_t)*8)];
+
+	memset(pos, -1, sizeof(int)*(1 << (sizeof(uint8_t) * 8)));
+
+	for (int i = 0, rank = 0; i < positions.size(); i++) {
+		if (pos[positions[i].first] == -1) {
+			pos[positions[i].first] = rank++;
+		}
+	}
+
+	//memcpy(previous.data(), toTransform->data, toTransform->size);
+	for (size_t i = 0; i <toTransform->size; i++) {
+		previous[i] = pos[toTransform->data[i]];
+	}
+
+
+
+
+	for (int i = 1; i>>1 < toTransform->size; i<<=1) {
+		for (int j = 0; j < toTransform->size; j++) {
+			slices[j].c[0] = previous[j];
+			
+			if (i + j < toTransform->size)
+				slices[j].c[1] = previous[i + j];
+			else 
+				slices[j].c[1] = previous[(i+j)%toTransform->size];
+
+			slices[j].p = j;
+		}
+
+		sort(slices.begin(), slices.end(), SliceCmp);
+
+		previous[slices[0].p] = 0;
+
+		for (int j = 1; j < toTransform->size; j++) {
+			previous[slices[j].p] = SliceEq(slices[j], slices[j - 1]) ? previous[slices[j - 1].p] : j;
+		}
+	}
+
+	//vector<vector<uint8_t>> rotations(toTransform->size, vector<uint8_t>(toTransform->size));
+	//vector<long long> rotations;
+	
+	//for (long long i = 0; i < toTransform->size; i++) {
+	//	rotations.emplace_back(i);
+	//}
 
 	/*for (int i = 0; i < toTransform->size; i++) {
 		/*for (int j = 0, k = i; j < toTransform->size; j++, k++) {
@@ -163,22 +217,22 @@ long long BWT::Transform(Data* toTransform) {
 		memcpy((rotations[i].data() + toTransform->size - i), toTransform->data, i);
 	}*/
 
-	sort(rotations.begin(), rotations.end(), SortCompare1);
+	//sort(rotations.begin(), rotations.end(), SortCompare1);
 
 	long long index;
 
-	for (long long i = 0; i < rotations.size(); i++) {
-		if (rotations[i] == 0) {
+	/*for (long long i = 0; i < previous.size(); i++) {
+		if (previous[i] == 0) {
 			index = i;
 			break;
 		}
+	}*/
+
+	for (long long i = 0; i < previous.size(); i++) {
+		toTransform->data[previous[i]] = original[(i - 1 + previous.size())%previous.size()];
 	}
 
-	for (long long i = 0; i < rotations.size(); i++) {
-		toTransform->data[i] = original[(rotations[i] - 1 + rotations.size())%rotations.size()];
-	}
-
-	return index;
+	return previous[0];
 }
 
 /*
