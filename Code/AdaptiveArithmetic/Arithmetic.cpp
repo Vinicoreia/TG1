@@ -275,7 +275,7 @@ void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
 	order0.AddFrequency((size_t)alphabetSize + 1);
 
 	int currentOrder = 0;
-	int nofOrders = 2;
+	int nofOrders = 5;
 	int highestOrder = 0;
 
 	vector<unordered_map<uint64_t, CumulativeCountTable*>> orders(nofOrders);
@@ -379,7 +379,7 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 	order0.AddFrequency((size_t)alphabetSize + 1);
 
 	int currentOrder = 0;
-	int nofOrders = 2;
+	int nofOrders = 5;
 	int highestOrder = 0;
 
 	vector<unordered_map<uint64_t, CumulativeCountTable*>> orders(nofOrders);
