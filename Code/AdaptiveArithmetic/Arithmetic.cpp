@@ -10,6 +10,8 @@
 #define TOP_MASK 0x80000000U
 
 
+//TODO MAKE EXCLUSION METHOD IN PPM
+
 Arithmetic::Arithmetic(uint64 precision, uint64 msb, uint64 alphabetSize):precision(precision), msbMask(msb), alphabetSize(alphabetSize)
 {
 }
@@ -48,7 +50,7 @@ void Arithmetic::StaticEncode(fstream* output, std::vector<uint8_t>* input) {
 
 
 	for (size_t i = 0; i <= input->size(); i++) {
-		cout << "\rProcessing " << i << " of " << input->size();
+		//cout << "\rProcessing " << i << " of " << input->size();
 		if (i < input->size())
 			readAux = input->at(i);
 		//readAux = read;
@@ -171,7 +173,7 @@ void Arithmetic::AdaptiveEncode(fstream * output, vector<uint8_t>* input)
 	int readAux;
 
 	for (size_t i = 0; i <= input->size(); i++) {
-		cout << "\rProcessing " << i << " of " << input->size();
+		//cout << "\rProcessing " << i << " of " << input->size();
 		if (i < input->size())
 			readAux = input->at(i);
 		//readAux = read;
@@ -282,6 +284,8 @@ void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
 
 	vector<unordered_map<uint64_t, CumulativeCountTable*>> orders(nofOrders);
 
+	stack<CumulativeCountTable*> previousTable;
+
 	uint8_t byteMask = 0xffU;
 	uint64_t currentContextMask = 0x0U;
 	uint64_t currentContext = 0;
@@ -304,12 +308,12 @@ void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
 	int readAux;
 
 	for (size_t i = 0; i <= input->size(); i++) {
-		cout << "\rProcessing " << i << " of " << input->size();
+		//cout << "\rProcessing " << i << " of " << input->size();
 		if (i < input->size())
 			readAux = input->at(i);
 		//readAux = read;
 		/*if (i == input->size())*/else {
-			readAux = (int)alphabetSize + 1;
+			readAux = (int)alphabetSize;
 		}
 
 		//Search for longest context
@@ -318,12 +322,14 @@ void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
 				&orderM1:
 				orders[currentOrder][currentContext&currentContextMask];
 
+
 			if (currentTable->GetFrequency(readAux) == 0) {
 				//not in current context, 
 				//write escape signal, update table, go to a lower context
-				WriteSymbol((int)alphabetSize, *currentTable);
 
-				currentTable->AddFrequency(readAux);
+				WriteSymbol((int)alphabetSize + 1, (previousTable.empty() || currentTable == &orderM1)?*currentTable : currentTable->Exclusion(previousTable.top()));
+
+				//currentTable->AddFrequency(readAux);
 				
 				if (currentOrder < nofOrders - 1) {
 					uint64_t auxMask = (currentContextMask<<8)| 0xff;
@@ -337,13 +343,16 @@ void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
 					if (currentOrder + 1 > highestOrder)
 						highestOrder = currentOrder + 1;
 				}
-
+				
+				//currentTable->AddFrequency(alphabetSize);
 				currentOrder--;
 				currentContextMask >>= 8;
+
+				previousTable.push(currentTable);
 			}
 			else {
 				//In contex, so write symbol, add to the frequency and update the context
-				WriteSymbol(readAux, *currentTable);
+				WriteSymbol(readAux, (previousTable.empty() || currentTable == &orderM1) ? *currentTable : currentTable->Exclusion(previousTable.top()));
 
 				/*if (currentOrder != 0) {
 					currentTable->AddFrequency(readAux);
@@ -361,7 +370,14 @@ void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
 					currentContextMask <<= 8;
 					currentContextMask |= 0xffU;
 				}
+
+				while (!previousTable.empty()) {
+					previousTable.top()->AddFrequency(readAux);
+					previousTable.pop();
+				}
+
 				break;
+				//previousTable = NULL;
 			}
 		}
 
@@ -371,6 +387,12 @@ void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
 
 	WriteBits(1);
 	bw.End();
+
+	for (auto i = orders.begin(); i != orders.end(); i++) {
+		for (auto j = i->begin(); j != i->end(); j++) {
+			delete j->second;
+		}
+	}
 
 }
 
@@ -422,16 +444,19 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 		CumulativeCountTable* currentTable = (currentOrder == -1) ?
 			&orderM1 :
 			orders[currentOrder][currentContext&currentContextMask];
+		//Get current symbol.
+
+		CumulativeCountTable currentTableAux = (previousContexts.empty() || currentTable == &orderM1) ? *currentTable : currentTable->Exclusion(previousContexts.top());
+
 
 		unsigned long long range = high - low + 1;
-		unsigned long long value = ((currentCode - low + 1) * currentTable->count - 1) / range;
+		unsigned long long value = ((currentCode - low + 1) * currentTableAux.count - 1) / range;
 
-		//Get current symbol.
-		symbol = currentTable->Search((long long)value);
+		symbol = currentTableAux.Search((long long)value);
 
 		//Update the range
-		unsigned long long nLow = low + (range * currentTable->GetLow(symbol)) / currentTable->count;
-		high = low + range * currentTable->GetHigh(symbol) / currentTable->count - 1;
+		unsigned long long nLow = low + (range * currentTableAux.GetLow(symbol)) / currentTableAux.count;
+		high = low + range * currentTableAux.GetHigh(symbol) / currentTableAux.count - 1;
 		low = nLow;
 
 		//While MSB are equal write bit on file
@@ -447,12 +472,13 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 			high = ((high << 1) & (precision >> 1)) | msbMask | 1;
 		}
 
-		if (symbol == alphabetSize + 1)
+		if (symbol == alphabetSize)
 			break;
 
-		if (symbol == alphabetSize) {
+		if (symbol == alphabetSize + 1) {
 			//If escape symbol then decrement the current order
 			currentOrder--;
+			//currentTable->AddFrequency(alphabetSize);
 			currentContextMask >>= 8;
 			previousContexts.push(currentTable);
 			continue;
@@ -507,11 +533,21 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 		currentContext |= toWrite;
 
 	}
+
+	for (auto i = orders.begin(); i != orders.end(); i++) {
+		for (auto j = i->begin(); j != i->end(); j++) {
+			delete j->second;
+		}
+	}
 }
 
 void Arithmetic::WriteSymbol(int readAux, CumulativeCountTable freq)
 {
 	//Update the range of high and low
+	if (freq.GetFrequency(readAux) == 0) {
+		cout << "WTF!\n";
+	}
+
 	unsigned long long range = high - low + 1;
 	unsigned long long nLow = low + (range * freq.GetLow(readAux)) / freq.count;
 	high = (low + (range * freq.GetHigh(readAux)) / freq.count) - 1;

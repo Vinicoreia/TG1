@@ -18,12 +18,39 @@ CumulativeCountTable::CumulativeCountTable(vector<long long> frequencyTable):fre
 char CumulativeCountTable::AddFrequency(size_t pos) {
 	if (pos >= frequencies.size())
 		return 0;
+
+	/*bool addEscape;
+
+	addEscape = (frequencies[pos] == 0);
+
 	frequencies[pos]++;
 	count++;
 
-	for (auto i = pos + 1; i < frequencies.size(); i++) {
+	for (auto i = pos + 1; i < frequencies.size() - 1; i++) {
 		limits[i]++;
 	}
+
+	if (addEscape) {
+		count++;
+		frequencies.back()++;
+		limits.back()++;
+	}*/
+
+	count = 0;
+	int escapeSize = 0;
+
+	frequencies[pos]++;
+
+	for (size_t i = 0; i < frequencies.size() - 1; i++) {
+		limits[i] = count;
+		count += frequencies[i];
+		if (frequencies[i])
+			escapeSize++;
+	}
+
+	limits[frequencies.size() - 1] = count;
+	frequencies[frequencies.size() - 1] = escapeSize;
+	count += escapeSize;
 
 	return 1;
 }
@@ -71,4 +98,22 @@ size_t CumulativeCountTable::Search(uint64 value) {
 	}
 
 	return start;
+}
+
+CumulativeCountTable CumulativeCountTable::Exclusion(CumulativeCountTable * table)
+{
+	vector<long long> freq(frequencies.size());
+	int escapeCount = 1;
+
+	for (size_t i = 0; i < frequencies.size(); i++) {
+		if (!table->GetFrequency(i) && frequencies[i]) {
+			freq[i] = frequencies[i];
+			escapeCount++;
+		}
+	}
+
+	freq[frequencies.size() - 2]++; //Add eof
+	freq[frequencies.size() - 1] = escapeCount;
+
+	return CumulativeCountTable(freq);
 }

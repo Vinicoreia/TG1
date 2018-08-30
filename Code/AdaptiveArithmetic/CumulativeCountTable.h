@@ -20,4 +20,7 @@ public:
 	long long GetFrequency(std::size_t index);
 	int Search(long long value);
 	std::size_t Search(uint64 value);
+
+	CumulativeCountTable Exclusion(CumulativeCountTable* table);
+
 };
