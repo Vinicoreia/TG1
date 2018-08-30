@@ -9,7 +9,7 @@
 #include "huff.h"
 #include "lz77.h"
 
-#define USIZE uint16_t
+#define USIZE uint8_t
 #define SHIFT sizeof(USIZE) * 4
 #define MASK (1 << SHIFT) - 1
 

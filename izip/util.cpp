@@ -156,6 +156,33 @@ std::vector<std::pair<char, long long>> getFrequencyU8(std::string buffer)
     return pairSymbProb;
 }
 
+std::vector<std::pair<uint8_t, long long>> getFrequencyU8Vector(std::vector<uint8_t> buffer)
+{
+
+    
+    std::unordered_map<uint8_t, long long> mapSymbAmount;    /*-*/
+    std::vector<std::pair<uint8_t, long long>> pairSymbProb; /*-*/
+
+    for (long long i = 0; i < buffer.size(); i++)
+    {
+        mapSymbAmount[buffer[i]] += 1;
+    }
+
+    for (std::unordered_map<uint8_t, long long>::iterator it = mapSymbAmount.begin(); it != mapSymbAmount.end(); ++it)
+    {
+        pairSymbProb.push_back(std::make_pair((uint8_t)(it->first), (long long)(it->second)));
+    }
+
+    sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
+        return left.second < right.second;
+    });
+    sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
+        return left.first < right.first;
+    });
+    return pairSymbProb;
+}
+
+
 std::vector<std::pair<uint16_t, long long>> getFrequencyU16(std::vector<uint16_t> buffer)
 {
 
