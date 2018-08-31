@@ -201,10 +201,10 @@ std::vector<std::pair<uint16_t, long long>> getFrequencyU16(std::vector<uint16_t
     }
 
     sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
-        return left.second < right.second;
+        return left.second > right.second;
     });
     sort(pairSymbProb.begin(), pairSymbProb.end(), [](auto &left, auto &right) {
-        return left.first < right.first;
+        return left.first > right.first;
     });
     return pairSymbProb;
 }

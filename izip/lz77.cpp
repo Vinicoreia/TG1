@@ -29,7 +29,7 @@ void getWindowSize()
     //     getline(std::cin, userInput);
     //     LOOKAHEADSIZE = std::stoi(userInput);
     DICTSIZE = 32767;
-    LOOKAHEADSIZE = 255;
+    LOOKAHEADSIZE = 511;
     DICTBITS = floor(log2(DICTSIZE) + 1);
     LOOKBITS = floor(log2(LOOKAHEADSIZE) + 1);
     LOOKAHEADSIZE = LOOKAHEADSIZE + 3; //that's because we don't accept matches of size less than 3
