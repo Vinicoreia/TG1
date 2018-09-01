@@ -13,7 +13,7 @@
 
 #include "Arithmetic.h"
 
-#define BLOCKSIZE 65536	/*1024 | 2048 | 4096 | 8192 | 16384 | 32768 | 65536 
+#define BLOCKSIZE 131072	/*1024 | 2048 | 4096 | 8192 | 16384 | 32768 | 65536 
 						| 131072 | 262144| 1048576
 	
 	
@@ -52,7 +52,7 @@ int Encode(string file1, string file2) {
 
 		if (readvector.size() == BLOCKSIZE) { //Read blocksize bytes
 			//RLE
-			//readvector = RunLengthEncode(readvector);
+			readvector = RunLengthEncode(readvector);
 
 			Data data(readvector.size());
 
@@ -68,20 +68,16 @@ int Encode(string file1, string file2) {
 			//Aply RLE
 			readvector = vector<uint8_t>(data.size);
 			memcpy(readvector.data(), data.data, data.size);
-			//readvector = RunLengthEncode(readvector);
+			readvector = RunLengthEncode(readvector);
 
-			//size_t blocksize = readvector.size();
+			size_t blocksize = readvector.size();
 
 			//Write out
 			long long last = toWrite.size();
 
-			/*toWrite.resize(last + sizeof(size_t) + sizeof(long long));
+			toWrite.resize(last + sizeof(size_t) + sizeof(long long));
 			memcpy(toWrite.data() + last, &blocksize, sizeof(size_t));
-			memcpy(toWrite.data() + last + sizeof(size_t), &index, sizeof(long long));*/
-
-			toWrite.resize(last + sizeof(long long));
-			memcpy(toWrite.data() + last, &index, sizeof(long long));
-
+			memcpy(toWrite.data() + last + sizeof(size_t), &index, sizeof(long long));
 			toWrite.insert(toWrite.end(), readvector.begin(), readvector.end());
 			readvector.clear();
 
@@ -92,7 +88,7 @@ int Encode(string file1, string file2) {
 
 	if (readvector.size() > 0) { //Read less than blocksize bytes and found eof
 		//RLE
-		//readvector = RunLengthEncode(readvector);
+		readvector = RunLengthEncode(readvector);
 
 		Data data(readvector.size());
 
@@ -107,21 +103,16 @@ int Encode(string file1, string file2) {
 		//Aply RLE
 		readvector.resize(data.size);
 		memcpy(readvector.data(), data.data, data.size);
-		//readvector = RunLengthEncode(readvector);
+		readvector = RunLengthEncode(readvector);
 
 		size_t blocksize = readvector.size();
 
 		//Write out
 		long long last = toWrite.size();
 
-		/*toWrite.resize(last + sizeof(size_t) + sizeof(long long));
+		toWrite.resize(last + sizeof(size_t) + sizeof(long long));
 		memcpy(toWrite.data() + last, &blocksize, sizeof(size_t));
 		memcpy(toWrite.data() + last + sizeof(size_t), &index, sizeof(long long));
-		toWrite.insert(toWrite.end(), readvector.begin(), readvector.end());*/
-
-		toWrite.resize(last + sizeof(long long));
-		memcpy(toWrite.data() + last, &index, sizeof(long long));
-
 		toWrite.insert(toWrite.end(), readvector.begin(), readvector.end());
 
 		/*toWrite.resize(toWrite.size() + sizeof(long long) + data.size * sizeof(uint8_t));
@@ -179,13 +170,10 @@ int Decode(string file1, string file2) {
 		long long index;
 		size_t blocksize;
 		//Read index for BWT reverse and blocksize
-		//memcpy(&blocksize, data.data() + i, sizeof(size_t));
-		//memcpy(&index, data.data() + i + sizeof(size_t), sizeof(long long));
-		memcpy(&index, data.data() + i, sizeof(long long));
-
-
+		memcpy(&blocksize, data.data() + i, sizeof(size_t));
+		memcpy(&index, data.data() + i + sizeof(size_t), sizeof(long long));
 		//cout<<index<<endl;
-		i+=sizeof(long long);
+		i+= sizeof(long long) + sizeof(size_t);
 		//index = (data[i++])|((long long)data[i++]<<8)|((long long)data[i++]<<16)|((long long)data[i++]<<24)|((long long)data[i++]<<32)|((long long)data[i++]<<40)|((long long)data[i++]<<48)|((long long)data[i++]<<56);
 
 		//input.read((char*)&index, sizeof(unsigned short));
@@ -207,7 +195,7 @@ int Decode(string file1, string file2) {
 			}*/
 
 
-			//readvector = RunLengthDecode(readvector);
+			readvector = RunLengthDecode(readvector);
 
 			Data aux(readvector.size());
 			memcpy(aux.data, readvector.data(), readvector.size());
@@ -218,7 +206,7 @@ int Decode(string file1, string file2) {
 			readvector.resize(aux.size);
 			memcpy(readvector.data(), aux.data, aux.size);
 
-			//readvector = RunLengthDecode(readvector);
+			readvector = RunLengthDecode(readvector);
 
 			output.write((char*)readvector.data(), readvector.size());
 		}
