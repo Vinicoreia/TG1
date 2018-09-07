@@ -6,13 +6,18 @@ CumulativeCountTable::CumulativeCountTable(size_t alphabetSize) :frequencies(alp
 	count = 0;
 }
 
-CumulativeCountTable::CumulativeCountTable(vector<long long> frequencyTable):frequencies(frequencyTable), limits(frequencyTable.size()) {
+CumulativeCountTable::CumulativeCountTable(vector<unsigned int> frequencyTable):frequencies(frequencyTable), limits(frequencyTable.size()) {
 	count = 0;
 
 	for (size_t i = 0; i < frequencies.size(); i++) {
 		limits[i] = count;
 		count += frequencies[i];
 	}
+}
+
+CumulativeCountTable::~CumulativeCountTable()
+{
+
 }
 
 char CumulativeCountTable::AddFrequency(size_t pos) {
@@ -37,37 +42,35 @@ char CumulativeCountTable::AddFrequency(size_t pos) {
 	}*/
 
 	count = 0;
-	int escapeSize = 0;
 
 	frequencies[pos]++;
 
-	for (size_t i = 0; i < frequencies.size(); i++) {
+	for (size_t i = 0; i < frequencies.size() - 1; i++) {
 		limits[i] = count;
 		count += frequencies[i];
-		//if (frequencies[i])
-			//escapeSize++;
+
 	}
 
-	//limits[frequencies.size() - 1] = count;
-	//frequencies[frequencies.size() - 1] = escapeSize;
-	//count += escapeSize;
+	limits[frequencies.size() - 1] = count;
+	frequencies[frequencies.size() - 1] = 1;
+	count++;
 
 	return 1;
 }
 
-long long CumulativeCountTable::GetLow(size_t index) {
+unsigned int CumulativeCountTable::GetLow(size_t index) {
 	if (index >= frequencies.size())
 		return -1;
 	return limits[index];
 }
 
-long long CumulativeCountTable::GetHigh(size_t index) {
+unsigned int CumulativeCountTable::GetHigh(size_t index) {
 	if (index >= frequencies.size())
 		return -1;
 	return limits[index] + frequencies[index];
 }
 
-long long CumulativeCountTable::GetFrequency(size_t index)
+unsigned int CumulativeCountTable::GetFrequency(size_t index)
 {
 	return frequencies[index];
 }
@@ -102,7 +105,7 @@ size_t CumulativeCountTable::Search(uint64 value) {
 
 CumulativeCountTable CumulativeCountTable::Exclusion(CumulativeCountTable * table)
 {
-	vector<long long> freq(frequencies.size());
+	vector<unsigned int> freq(frequencies.size());
 	int escapeCount = 1;
 
 	for (size_t i = 0; i < frequencies.size(); i++) {
