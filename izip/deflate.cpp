@@ -7,6 +7,17 @@
 /*1- Como aplicar Burrows wheeler (antes e depois, só antes ou só depois)*/
 /*2- Como splitar, quantos blocos, a partir de qual tamanho*/
 /*3- lembrar do rle definido*/
+
+std::vector<std::string> historyCharLenTree(4,"");
+std::vector<std::string> historyJumpTree(4,"");
+std::vector<std::string> historyCharLenCodes(4,"");
+std::vector<std::string> historyJumpCodes(4,"");
+int histCharLenTreePointer = 0;
+int histCharLenCodesPointer = 0;
+int histJumpTreePointer = 0;
+int histJumpCodesPointer = 0;
+
+
 #define MAXCODESIZE 18
 std::string USIZEToBin(USIZE c)
 {
@@ -190,6 +201,28 @@ int checkBiggestCode(std::string firstCode, std::string secondCode, std::string 
     }
 }
 
+std::string compareHistoryStrings(std::string firstString, std::vector<std::string> &historyString, int &pointer){
+    int cont = 0;
+    std::string found;
+    for(;cont<historyString.size(); cont++){
+        if(firstString.compare(historyString[cont]) == 0){
+            break;
+        }
+    }
+    if(cont!=4){
+        found +="1";
+        found.append(decimalToBitString(cont, 2));
+        std::cout<< found;
+        return(found);
+    }else{
+        
+        historyString[pointer%4] = firstString;
+        pointer++;
+        std::cout<<"0"+firstString;
+        return "0"+firstString;
+    }
+}
+
 std::string WriteDeflateBitString(
     std::deque<Data> &codeTriples,
 
@@ -202,46 +235,63 @@ std::string WriteDeflateBitString(
     std::unordered_map<uint16_t, std::pair<std::string, int>> &mapJumpCodeLength)
 {
 
-    /*HEADER*/
-    std::string out = "";
+    std::string charLenTree="";
+    std::string jumpTree="";
+    std::string charLenCodeLengthsTree= "";
+    std::string jumpCodeLengthsTree= "";
 
+    std::string out = "";
+    
     for (int i = 0; i < charLenCodeLengths.size(); i++)
     {
         if (charLenCodeLengths[i] == 0)
         {
-            out += "0";
+            charLenTree += "0";
         }
         else
         {
-            out += "1";
-            out.append(decimalToBitString(charLenCodeLengths[i], 10));
+            charLenTree += "1";
+            charLenTree.append(decimalToBitString(charLenCodeLengths[i], 10));
         }
     }
-
     for (auto it : pairCharLenCodeLength)
     {
-        out.append(USIZEToBin(it.first));
+        charLenCodeLengthsTree.append(USIZEToBin(it.first));
     }
 
     for (int i = 0; i < jumpCodeLengths.size(); i++)
     {
         if (jumpCodeLengths[i] == 0)
         {
-            out += "0";
+            jumpTree += "0";
         }
         else
         {
-            out += "1";
-            out.append(decimalToBitString(jumpCodeLengths[i], 8));
+            jumpTree += "1";
+            jumpTree.append(decimalToBitString(jumpCodeLengths[i], 10));
+
         }
     }
-
+    
     for (auto it : pairJumpCodeLength)
     {
-        out.append(USIZEToBin(it.first));
+        jumpCodeLengthsTree.append(USIZEToBin(it.first));
+
     }
 
+    std::cout<<"\n\n";
+    out.append(compareHistoryStrings(charLenTree, historyCharLenTree, histCharLenTreePointer));
+    std::cout<<" ";
+    out.append(compareHistoryStrings(charLenCodeLengthsTree, historyCharLenCodes, histCharLenCodesPointer));
+    std::cout<<"\n";
+    out.append(compareHistoryStrings(jumpTree, historyJumpTree, histJumpTreePointer));
+    std::cout<<" ";
+    out.append(compareHistoryStrings(jumpCodeLengthsTree, historyJumpCodes, histJumpCodesPointer));
+    std::cout<<"\n";
+
     uint16_t aux;
+
+
 
     for (auto it : codeTriples)
     {
@@ -263,6 +313,7 @@ std::string WriteDeflateBitString(
     }
     return out;
 }
+
 
 /*Chamar LZ77 ENCODE com flag encode = 1*/
 
@@ -355,11 +406,12 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode)
     uint16_t aux = 0;
     int i = 0;
     int j = 0;
+
     while (i < codeTriples.size())
     {
-        for (j = i; j - i < 5000; j++)
+        for (j = i; j - i < 4; j++)
         {
-            if (j == codeTriples.size())
+            if(j == codeTriples.size())
             {
                 break;
             }
