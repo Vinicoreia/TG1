@@ -6,19 +6,19 @@
 #include <stack>
 #include <unordered_map>
 
-#define MASK 0xffffffffU
-#define TOP_MASK 0x80000000U
+#define MASK 		0xffffffffU
+#define TOP_MASK 	0x80000000U
 
-
-//TODO MAKE EXCLUSION METHOD IN PPM
-
+#define MAXMEM 750000
+//3500 = 15MB
+//250000 = 550MB 
 Arithmetic::Arithmetic(uint64 precision, uint64 msb, uint64 alphabetSize):precision(precision), msbMask(msb), alphabetSize(alphabetSize)
 {
 }
 
 void Arithmetic::StaticEncode(fstream* output, std::vector<uint8_t>* input) {
 
-	std::vector<long long> frequencies((size_t)alphabetSize);
+	std::vector<unsigned int> frequencies((size_t)alphabetSize);
 
 	//Add the EOF to the end
 	frequencies.emplace_back(1);
@@ -36,6 +36,17 @@ void Arithmetic::StaticEncode(fstream* output, std::vector<uint8_t>* input) {
 	bw.SetFile(output);
 
 	CumulativeCountTable freq(frequencies);
+	
+	int shiftBits = 0;
+	
+	for(int i = 0;;i++){
+		if((msbMask >> i) &1){
+			break;
+		}else 
+			shiftBits++;
+	}
+	
+	cout<<shiftBits<<endl;
 
 	unsigned long long high = precision;
 	unsigned long long low = 0x0;
@@ -66,7 +77,7 @@ void Arithmetic::StaticEncode(fstream* output, std::vector<uint8_t>* input) {
 
 		//While MSB are equal write bit on file
 		while (((low^high) & msbMask) == 0) {
-			WriteBits((low >> 31) & 1);
+			WriteBits((low >> shiftBits) & 1);
 			low = (low << 1)&precision;
 			high = ((high << 1)&precision) | 1;
 		}
@@ -84,7 +95,7 @@ void Arithmetic::StaticEncode(fstream* output, std::vector<uint8_t>* input) {
 
 
 void Arithmetic::StaticDecode(fstream* input, vector<uint8_t>* output) {
-	std::vector<long long> frequencies((size_t)alphabetSize);
+	std::vector<unsigned int> frequencies((size_t)alphabetSize);
 
 	output->clear();
 
@@ -150,7 +161,7 @@ void Arithmetic::StaticDecode(fstream* input, vector<uint8_t>* output) {
 
 void Arithmetic::AdaptiveEncode(fstream * output, vector<uint8_t>* input)
 {
-	std::vector<long long> frequencies((size_t)alphabetSize, 1);
+	std::vector<unsigned int> frequencies((size_t)alphabetSize, 1);
 
 	//Add the EOF to the end
 	frequencies.emplace_back(1);
@@ -209,7 +220,7 @@ void Arithmetic::AdaptiveEncode(fstream * output, vector<uint8_t>* input)
 
 void Arithmetic::AdaptiveDecode(fstream * input, vector<uint8_t>* output)
 {
-	std::vector<long long> frequencies((size_t)alphabetSize, 1);
+	std::vector<unsigned int> frequencies((size_t)alphabetSize, 1);
 
 	output->clear();
 
@@ -271,12 +282,14 @@ void Arithmetic::AdaptiveDecode(fstream * input, vector<uint8_t>* output)
 	}
 }
 
-void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
+void Arithmetic::PPMEncode(fstream * output, fstream* input)
 {
-	CumulativeCountTable orderM1(vector<long long>(alphabetSize + 2, 1));
+	CumulativeCountTable orderM1(vector<unsigned int>(alphabetSize + 2, 1));
 	CumulativeCountTable order0(alphabetSize + 2);
 	order0.AddFrequency((size_t)alphabetSize);
 	order0.AddFrequency((size_t)alphabetSize + 1);
+
+	long long memory = 0;
 
 	int currentOrder = 0;
 	int nofOrders = 5;
@@ -305,14 +318,18 @@ void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
 	pendingBits = 0;
 
 	uint8_t read;
-	int readAux;
+	unsigned int readAux;
 
-	for (size_t i = 0; i <= input->size(); i++) {
+	//for (size_t i = 0; i <= input->size(); i++) {
+	while(!input->eof()){
 		//cout << "\rProcessing " << i << " of " << input->size();
-		if (i < input->size())
-			readAux = input->at(i);
+		//if (i < input->size())
+		input->read((char*)&read, sizeof(uint8_t));
+
+		readAux = (unsigned int)read;
+			//readAux = input->at(i);
 		//readAux = read;
-		/*if (i == input->size())*/else {
+		/*if (i == input->size())*/if(input->eof()) {
 			readAux = (int)alphabetSize;
 		}
 
@@ -321,9 +338,19 @@ void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
 			CumulativeCountTable* currentTable = (currentOrder == -1) ? 
 				&orderM1:
 				orders[currentOrder][currentContext&currentContextMask];
+			while (currentTable == NULL) {
+				orders[currentOrder].erase(currentContext&currentContextMask);
+
+				currentOrder--;
+				currentContextMask >>= 8;
+
+				currentTable = (currentOrder == -1) ?
+					&orderM1 :
+					orders[currentOrder][currentContext&currentContextMask];
+			}
 
 
-			if (currentTable->GetFrequency(readAux) == 0) {
+			if (currentTable->GetFrequency(readAux) == 0 ) {
 				//not in current context, 
 				//write escape signal, update table, go to a lower context
 
@@ -331,20 +358,20 @@ void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
 
 				//currentTable->AddFrequency(readAux);
 				
-				if (currentOrder < nofOrders - 1) {
+				if (currentOrder < nofOrders - 1 && memory < MAXMEM) {
 					uint64_t auxMask = (currentContextMask<<8)| 0xff;
 					uint64_t indexAux = ((currentContext<<8)|(uint8_t)readAux) & auxMask;
 
-					if (orders[currentOrder + 1][indexAux] == NULL) {
+					if (orders[currentOrder + 1][indexAux] == NULL ) {
 						orders[currentOrder + 1][indexAux] = new CumulativeCountTable(order0);
+						memory++;
 						//orders[currentOrder + 1][indexAux]->AddFrequency(readAux);
+						if (currentOrder + 1 > highestOrder)
+							highestOrder = currentOrder + 1;
 					}
-
-					if (currentOrder + 1 > highestOrder)
-						highestOrder = currentOrder + 1;
 				}
 				
-				currentTable->AddFrequency(alphabetSize + 1);
+				//currentTable->AddFrequency(alphabetSize + 1);
 				currentOrder--;
 				currentContextMask >>= 8;
 
@@ -360,7 +387,8 @@ void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
 
 				uint64_t auxMask = currentContextMask;
 				for (int k = currentOrder; k >= 0; k--) {
-					orders[k][auxMask&currentContext]->AddFrequency(readAux);
+					if(orders[k][auxMask&currentContext] != NULL)
+						orders[k][auxMask&currentContext]->AddFrequency(readAux);
 					auxMask >>= 8;
 				}
 
@@ -393,12 +421,12 @@ void Arithmetic::PPMEncode(fstream * output, vector<uint8_t>* input)
 			delete j->second;
 		}
 	}
-
+	cout << "mem: " << memory << endl;
 }
 
 void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 {
-	CumulativeCountTable orderM1(vector<long long>(alphabetSize + 2, 1));
+	CumulativeCountTable orderM1(vector<unsigned int>(alphabetSize + 2, 1));
 	CumulativeCountTable order0(alphabetSize + 2);
 	order0.AddFrequency((size_t)alphabetSize);
 	order0.AddFrequency((size_t)alphabetSize + 1);
@@ -412,6 +440,8 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 	uint8_t byteMask = 0xffU;
 	uint64_t currentContextMask = 0x0U;
 	uint64_t currentContext = 0;
+
+	long long memory = 0;
 
 	orders[0][0] = new CumulativeCountTable(order0);
 
@@ -444,7 +474,16 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 		CumulativeCountTable* currentTable = (currentOrder == -1) ?
 			&orderM1 :
 			orders[currentOrder][currentContext&currentContextMask];
-		//Get current symbol.
+		while (currentTable == NULL) {
+			orders[currentOrder].erase(currentContext&currentContextMask);
+
+			currentOrder--;
+			currentContextMask >>= 8;
+
+			currentTable = (currentOrder == -1) ?
+				&orderM1 :
+				orders[currentOrder][currentContext&currentContextMask];
+		}
 
 		CumulativeCountTable currentTableAux = (previousContexts.empty() || currentTable == &orderM1) ? *currentTable : currentTable->Exclusion(previousContexts.top());
 
@@ -480,7 +519,7 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 			currentOrder--;
 
 			
-			currentTable->AddFrequency(alphabetSize + 1);
+			//currentTable->AddFrequency(alphabetSize + 1);
 			currentContextMask >>= 8;
 			previousContexts.push(currentTable);
 			continue;
@@ -497,7 +536,7 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 		
 		//Add new context if needed
 		for (int i = highestOrder; i >= currentOrder; i--) {
-			if (i < nofOrders - 1) {
+			if (i < nofOrders - 1 && memory < MAXMEM) {
 				uint64_t auxMask = 0;
 				for (int j = 0; j <= i; j++) {
 					auxMask = (auxMask << 8) | 0xff;
@@ -505,12 +544,13 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 
 				uint64_t indexAux = ((currentContext<<8)|toWrite) & auxMask;
 
-				if (orders[i + 1][indexAux] == NULL) {
+				if (orders[i + 1][indexAux] == NULL ) {
 					orders[i + 1][indexAux] = new CumulativeCountTable(order0);
+					memory++;
+					if (i + 1 > highestOrder)
+						highestOrder = i + 1;
 				}
 
-				if (i + 1 > highestOrder)
-					highestOrder = i + 1;
 			}
 		}
 
@@ -518,7 +558,8 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 		uint64_t auxMask = currentContextMask;
 		//Add appearances in lower contexts
 		for (int k = currentOrder; k >= 0; k--) {
-			orders[k][auxMask&currentContext]->AddFrequency(toWrite);
+			if (orders[k][auxMask&currentContext] != NULL)
+				orders[k][auxMask&currentContext]->AddFrequency(toWrite);
 			auxMask >>= 8;
 		}
 
@@ -541,14 +582,12 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 			delete j->second;
 		}
 	}
+	cout << "mem: " << memory << endl;
 }
 
 void Arithmetic::WriteSymbol(int readAux, CumulativeCountTable freq)
 {
 	//Update the range of high and low
-	if (freq.GetFrequency(readAux) == 0) {
-		cout << "WTF!\n";
-	}
 
 	unsigned long long range = high - low + 1;
 	unsigned long long nLow = low + (range * freq.GetLow(readAux)) / freq.count;

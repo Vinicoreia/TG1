@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
 			return -1;
 		}
 
-		while (1) {
+		/*while (1) {
 			uint8_t read;
 
 			infile.read((char*)&read, 1);
@@ -69,16 +69,41 @@ int main(int argc, char** argv) {
 				break;
 
 			data.emplace_back(read);
-		}
+		}*/
+
 		time = clock();
 		if (type == "arithmetic") {
+			infile.close();
+			infile.open(file1, fstream::in | fstream::binary | fstream::ate);
+			long long filesize = infile.tellg();
+
+			infile.close();
+			infile.open(file1, fstream::in | fstream::binary);
+			data.resize(filesize);
+
+			infile.read((char*)data.data(), filesize);
+
+			infile.close();
+
 			art.StaticEncode(&outfile, &data);
 		}
 		else if (type == "adaptative") {
+			infile.close();
+			infile.open(file1, fstream::in | fstream::binary | fstream::ate);
+			long long filesize = infile.tellg();
+
+			infile.close();
+			infile.open(file1, fstream::in | fstream::binary);
+			data.resize(filesize);
+
+			infile.read((char*)data.data(), filesize);
+
+			infile.close();
+
 			art.AdaptiveEncode(&outfile, &data);
 		}
 		else if (type == "ppm") {
-			art.PPMEncode(&outfile, &data);
+			art.PPMEncode(&outfile, &infile);
 		}
 		cout << "Time elapsed in Encoding: " << ((double)(clock() - time) / CLOCKS_PER_SEC) << endl;
 	}

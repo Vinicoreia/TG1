@@ -49,6 +49,6 @@ public:
 	void AdaptiveEncode(fstream* output, vector<uint8_t>* input);
 	void AdaptiveDecode(fstream* input, vector<uint8_t>* output);
 
-	void PPMEncode(fstream* output, vector<uint8_t>* input);
+	void PPMEncode(fstream* output, fstream* input);
 	void PPMDecode(fstream* input, vector<uint8_t>* output);
 };
