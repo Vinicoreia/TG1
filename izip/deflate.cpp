@@ -8,15 +8,14 @@
 /*2- Como splitar, quantos blocos, a partir de qual tamanho*/
 /*3- lembrar do rle definido*/
 
-std::vector<std::string> historyCharLenTree(4,"");
-std::vector<std::string> historyJumpTree(4,"");
-std::vector<std::string> historyCharLenCodes(4,"");
-std::vector<std::string> historyJumpCodes(4,"");
+std::vector<std::string> historyCharLenTree(4, "");
+std::vector<std::string> historyJumpTree(4, "");
+std::vector<std::string> historyCharLenCodes(4, "");
+std::vector<std::string> historyJumpCodes(4, "");
 int histCharLenTreePointer = 0;
 int histCharLenCodesPointer = 0;
 int histJumpTreePointer = 0;
 int histJumpCodesPointer = 0;
-
 
 #define MAXCODESIZE 18
 std::string USIZEToBin(USIZE c)
@@ -201,25 +200,31 @@ int checkBiggestCode(std::string firstCode, std::string secondCode, std::string 
     }
 }
 
-std::string compareHistoryStrings(std::string firstString, std::vector<std::string> &historyString, int &pointer){
+std::string compareHistoryStrings(std::string firstString, std::vector<std::string> &historyString, int &pointer)
+{
     int cont = 0;
     std::string found;
-    for(;cont<historyString.size(); cont++){
-        if(firstString.compare(historyString[cont]) == 0){
+    for (; cont < historyString.size(); cont++)
+    {
+        if (firstString.compare(historyString[cont]) == 0)
+        {
             break;
         }
     }
-    if(cont!=4){
-        found +="1";
+    if (cont != 4)
+    {
+        found += "1";
         found.append(decimalToBitString(cont, 2));
-        std::cout<< found;
-        return(found);
-    }else{
-        
-        historyString[pointer%4] = firstString;
+        std::cout << found;
+        return (found);
+    }
+    else
+    {
+
+        historyString[pointer % 4] = firstString;
         pointer++;
-        std::cout<<"0"+firstString;
-        return "0"+firstString;
+        std::cout << "0" + firstString;
+        return "0" + firstString;
     }
 }
 
@@ -235,13 +240,13 @@ std::string WriteDeflateBitString(
     std::unordered_map<uint16_t, std::pair<std::string, int>> &mapJumpCodeLength)
 {
 
-    std::string charLenTree="";
-    std::string jumpTree="";
-    std::string charLenCodeLengthsTree= "";
-    std::string jumpCodeLengthsTree= "";
+    std::string charLenTree = "";
+    std::string jumpTree = "";
+    std::string charLenCodeLengthsTree = "";
+    std::string jumpCodeLengthsTree = "";
 
     std::string out = "";
-    
+
     for (int i = 0; i < charLenCodeLengths.size(); i++)
     {
         if (charLenCodeLengths[i] == 0)
@@ -269,29 +274,25 @@ std::string WriteDeflateBitString(
         {
             jumpTree += "1";
             jumpTree.append(decimalToBitString(jumpCodeLengths[i], 10));
-
         }
     }
-    
+
     for (auto it : pairJumpCodeLength)
     {
         jumpCodeLengthsTree.append(USIZEToBin(it.first));
-
     }
 
-    std::cout<<"\n\n";
+    std::cout << "\n\n";
     out.append(compareHistoryStrings(charLenTree, historyCharLenTree, histCharLenTreePointer));
-    std::cout<<" ";
+    std::cout << " ";
     out.append(compareHistoryStrings(charLenCodeLengthsTree, historyCharLenCodes, histCharLenCodesPointer));
-    std::cout<<"\n";
+    std::cout << "\n";
     out.append(compareHistoryStrings(jumpTree, historyJumpTree, histJumpTreePointer));
-    std::cout<<" ";
+    std::cout << " ";
     out.append(compareHistoryStrings(jumpCodeLengthsTree, historyJumpCodes, histJumpCodesPointer));
-    std::cout<<"\n";
+    std::cout << "\n";
 
     uint16_t aux;
-
-
 
     for (auto it : codeTriples)
     {
@@ -314,7 +315,6 @@ std::string WriteDeflateBitString(
     return out;
 }
 
-
 /*Chamar LZ77 ENCODE com flag encode = 1*/
 
 void DeflatePart(std::deque<Data> codeTriplesAux,
@@ -327,7 +327,7 @@ void DeflatePart(std::deque<Data> codeTriplesAux,
     std::priority_queue<nodeU16 *, std::vector<nodeU16 *>, compareU16> heapCharLen;
     std::priority_queue<nodeU16 *, std::vector<nodeU16 *>, compareU16> heapJump;
     std::vector<std::pair<uint16_t, int>> pairCharLenCodeLength;
-    std::vector<int> charLenCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0,0, 0, 0, 0, 0, 0, 0, 0, 0};
+    std::vector<int> charLenCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     std::vector<std::pair<uint16_t, int>> pairJumpCodeLength;
     std::vector<int> JumpCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     std::unordered_map<uint16_t, std::pair<std::string, int>> mapCharLenCodeLength;
@@ -380,15 +380,15 @@ void DeflatePart(std::deque<Data> codeTriplesAux,
     buildU16Codes(pairCharLenCodeLength, charLenCodeLengths, mapCharLenCodeLength);
 
     bitString += WriteDeflateBitString(
-    codeTriplesAux,
+        codeTriplesAux,
 
-    pairCharLenCodeLength,
-    charLenCodeLengths,
-    mapCharLenCodeLength,
+        pairCharLenCodeLength,
+        charLenCodeLengths,
+        mapCharLenCodeLength,
 
-    pairJumpCodeLength,
-    JumpCodeLengths,
-    mapJumpCodeLength);
+        pairJumpCodeLength,
+        JumpCodeLengths,
+        mapJumpCodeLength);
 
     return;
 }
@@ -411,22 +411,265 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode)
     {
         for (j = i; j - i < 4; j++)
         {
-            if(j == codeTriples.size())
+            if (j == codeTriples.size())
             {
                 break;
             }
-            aux = codeTriples[j].nextChar;
-            aux = aux << 8;
             if (codeTriples[j].match.length() == 0)
             {
-                aux |= codeTriples[j].match.length();
+                bufferCharLen.push_back(codeTriples[j].nextChar);
             }
             else
-            {
-                aux |= (codeTriples[j].match.length() - 3);
+            { /* Aqui separamos os Lengths para extra bits*/
+                bufferCharLen.push_back(codeTriples[j].nextChar);
+                if (codeTriples[j].match.length() >= 3 and codeTriples[j].match.length() <= 10)
+                {
+                    bufferCharLen.push_back(254 + codeTriples[j].match.length());
+                }
+                else if (codeTriples[j].match.length() >= 11 and codeTriples[j].match.length() <= 18)
+                {
+
+                    if (codeTriples[j].match.length() >= 11 and codeTriples[j].match.length() <= 12)
+                    {
+                        bufferCharLen.push_back(265);
+                    }
+                    else if (codeTriples[j].match.length() >= 13 and codeTriples[j].match.length() <= 14)
+                    {
+                        bufferCharLen.push_back(266);
+                    }
+                    else if (codeTriples[j].match.length() >= 15 and codeTriples[j].match.length() <= 16)
+                    {
+                        bufferCharLen.push_back(267);
+                    }
+                    else if (codeTriples[j].match.length() >= 17 and codeTriples[j].match.length() <= 18)
+                    {
+                        bufferCharLen.push_back(268);
+                    }
+                    else
+                    {
+                        exit(1);
+                    }
+                }
+                else if (codeTriples[j].match.length() >= 19 and codeTriples[j].match.length() <= 34)
+                {
+
+                    if (codeTriples[j].match.length() >= 19 and codeTriples[j].match.length() <= 22)
+                    {
+                        bufferCharLen.push_back(269);
+                    }
+                    else if (codeTriples[j].match.length() >= 23 and codeTriples[j].match.length() <= 26)
+                    {
+                        bufferCharLen.push_back(270);
+                    }
+                    else if (codeTriples[j].match.length() >= 27 and codeTriples[j].match.length() <= 30)
+                    {
+                        bufferCharLen.push_back(271);
+                    }
+                    else if (codeTriples[j].match.length() >= 31 and codeTriples[j].match.length() <= 34)
+                    {
+                        bufferCharLen.push_back(272);
+                    }
+                    else
+                    {
+                        exit(1);
+                    }
+                }
+                else if (codeTriples[j].match.length() >= 35 and codeTriples[j].match.length() <= 66)
+                {
+
+                    if (codeTriples[j].match.length() >= 35 and codeTriples[j].match.length() <= 42)
+                    {
+                        bufferCharLen.push_back(273);
+                    }
+                    else if (codeTriples[j].match.length() >= 43 and codeTriples[j].match.length() <= 50)
+                    {
+                        bufferCharLen.push_back(274);
+                    }
+                    else if (codeTriples[j].match.length() >= 51 and codeTriples[j].match.length() <= 58)
+                    {
+                        bufferCharLen.push_back(275);
+                    }
+                    else if (codeTriples[j].match.length() >= 59 and codeTriples[j].match.length() <= 66)
+                    {
+                        bufferCharLen.push_back(276);
+                    }
+                    else
+                    {
+                        exit(1);
+                    }
+                }
+                else if (codeTriples[j].match.length() >= 67 and codeTriples[j].match.length() <= 130)
+                {
+
+                    if (codeTriples[j].match.length() >= 67 and codeTriples[j].match.length() <= 82)
+                    {
+                        bufferCharLen.push_back(277);
+                    }
+                    else if (codeTriples[j].match.length() >= 83 and codeTriples[j].match.length() <= 98)
+                    {
+                        bufferCharLen.push_back(278);
+                    }
+                    else if (codeTriples[j].match.length() >= 99 and codeTriples[j].match.length() <= 114)
+                    {
+                        bufferCharLen.push_back(279);
+                    }
+                    else if (codeTriples[j].match.length() >= 115 and codeTriples[j].match.length() <= 130)
+                    {
+                        bufferCharLen.push_back(280);
+                    }
+                    else
+                    {
+                        exit(1);
+                    }
+                }
+                else if (codeTriples[j].match.length() >= 131 and codeTriples[j].match.length() <= 257)
+                {
+
+                    if (codeTriples[j].match.length() >= 131 and codeTriples[j].match.length() <= 162)
+                    {
+                        bufferCharLen.push_back(281);
+                    }
+                    else if (codeTriples[j].match.length() >= 163 and codeTriples[j].match.length() <= 194)
+                    {
+                        bufferCharLen.push_back(282);
+                    }
+                    else if (codeTriples[j].match.length() >= 195 and codeTriples[j].match.length() <= 226)
+                    {
+                        bufferCharLen.push_back(283);
+                    }
+                    else if (codeTriples[j].match.length() >= 227 and codeTriples[j].match.length() <= 257)
+                    {
+                        bufferCharLen.push_back(284);
+                    }
+                    else
+                    {
+                        exit(1);
+                    }
+                }
+                else if (codeTriples[j].match.length() == 258)
+                {
+                    bufferCharLen.push_back(285);
+                }
+                else
+                {
+                    exit(1);
+                }
+
+                /*Aqui termina os codeLengths das matchs*/
+
+                if (codeTriples[j].offset >= 1 and codeTriples[j].offset <= 4)
+                {
+                    bufferJump.push_back(codeTriples[j].offset - 1);
+                }
+                else if (codeTriples[j].offset >= 5 and codeTriples[j].offset <= 6)
+                {
+                    bufferJump.push_back(4);
+                }
+                else if (codeTriples[j].offset >= 7 and codeTriples[j].offset <= 8)
+                {
+                    bufferJump.push_back(5);
+                }
+                else if (codeTriples[j].offset >= 9 and codeTriples[j].offset <= 12)
+                {
+                    bufferJump.push_back(6);
+                }
+                else if (codeTriples[j].offset >= 13 and codeTriples[j].offset <= 16)
+                {
+                    bufferJump.push_back(7);
+                }
+                else if (codeTriples[j].offset >= 17 and codeTriples[j].offset <= 24)
+                {
+                    bufferJump.push_back(8);
+                }
+                else if (codeTriples[j].offset >= 25 and codeTriples[j].offset <= 32)
+                {
+                    bufferJump.push_back(9);
+                }
+                else if (codeTriples[j].offset >= 33 and codeTriples[j].offset <= 48)
+                {
+                    bufferJump.push_back(10);
+                }
+                else if (codeTriples[j].offset >= 49 and codeTriples[j].offset <= 64)
+                {
+                    bufferJump.push_back(11);
+                }
+                else if (codeTriples[j].offset >= 65 and codeTriples[j].offset <= 96)
+                {
+                    bufferJump.push_back(12);
+                }
+                else if (codeTriples[j].offset >= 97 and codeTriples[j].offset <= 128)
+                {
+                    bufferJump.push_back(13);
+                }
+                else if (codeTriples[j].offset >= 129 and codeTriples[j].offset <= 192)
+                {
+                    bufferJump.push_back(14);
+                }
+                else if (codeTriples[j].offset >= 193 and codeTriples[j].offset <= 256)
+                {
+                    bufferJump.push_back(15);
+                }
+                else if (codeTriples[j].offset >= 257 and codeTriples[j].offset <= 384)
+                {
+                    bufferJump.push_back(16);
+                }
+                else if (codeTriples[j].offset >= 385 and codeTriples[j].offset <= 512)
+                {
+                    bufferJump.push_back(17);
+                }
+                else if (codeTriples[j].offset >= 513 and codeTriples[j].offset <= 768)
+                {
+                    bufferJump.push_back(18);
+                }
+                else if (codeTriples[j].offset >= 769 and codeTriples[j].offset <= 1024)
+                {
+                    bufferJump.push_back(19);
+                }
+                else if (codeTriples[j].offset >= 1025 and codeTriples[j].offset <= 1536)
+                {
+                    bufferJump.push_back(20);
+                }
+                else if (codeTriples[j].offset >= 1537 and codeTriples[j].offset <= 2048)
+                {
+                    bufferJump.push_back(21);
+                }
+                else if (codeTriples[j].offset >= 2049 and codeTriples[j].offset <= 3072)
+                {
+                    bufferJump.push_back(22);
+                }
+                else if (codeTriples[j].offset >= 3073 and codeTriples[j].offset <= 4096)
+                {
+                    bufferJump.push_back(23);
+                }
+                else if (codeTriples[j].offset >= 4097 and codeTriples[j].offset <= 6144)
+                {
+                    bufferJump.push_back(24);
+                }
+                else if (codeTriples[j].offset >= 6145 and codeTriples[j].offset <= 8192)
+                {
+                    bufferJump.push_back(25);
+                }
+                else if (codeTriples[j].offset >= 8193 and codeTriples[j].offset <= 12288)
+                {
+                    bufferJump.push_back(26);
+                }
+                else if (codeTriples[j].offset >= 12289 and codeTriples[j].offset <= 16384)
+                {
+                    bufferJump.push_back(27);
+                }
+                else if (codeTriples[j].offset >= 16385 and codeTriples[j].offset <= 24576)
+                {
+                    bufferJump.push_back(28);
+                }
+                else if (codeTriples[j].offset >= 24577 and codeTriples[j].offset <= 32768)
+                {
+                    bufferJump.push_back(29);
+                }
+                else
+                {
+                    exit(1);
+                }
             }
-            bufferJump.push_back(codeTriples[j].offset);
-            bufferCharLen.push_back(aux);
             codeTriplesAux.emplace_back(codeTriples[j]);
         }
         i = j;
