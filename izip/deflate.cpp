@@ -764,7 +764,7 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode)
 
     while (i < codeTriples.size())
     {
-        for (j = i; j - i < 800; j++)
+        for (j = i; j - i < 50000000; j++)
         {
             if (j == codeTriples.size())
             {
