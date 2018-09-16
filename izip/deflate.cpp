@@ -215,7 +215,7 @@ std::string compareHistoryStrings(std::string firstString, std::vector<std::stri
     {
         found += "1";
         found.append(decimalToBitString(cont, 2));
-        // std::cout << found;
+        std::cout << found;
         return (found);
     }
     else
@@ -223,7 +223,7 @@ std::string compareHistoryStrings(std::string firstString, std::vector<std::stri
 
         historyString[pointer % 4] = firstString;
         pointer++;
-        // std::cout << "0" + firstString;
+        std::cout << "0" + firstString;
         return "0" + firstString;
     }
 }
@@ -581,53 +581,43 @@ std::string WriteDeflateBitString(
     std::vector<int> &jumpCodeLengths,
     std::unordered_map<uint16_t, std::pair<std::string, int>> &mapJumpCodeLength)
 {
-
-    std::string charLenTree = "";
-    std::string jumpTree = "";
-    std::string charLenCodeLengthsTree = "";
-    std::string jumpCodeLengthsTree = "";
-
     std::string out = "";
 
-    // for (int i = 0; i < charLenCodeLengths.size(); i++)
-    // {
-    //     if (charLenCodeLengths[i] == 0)
-    //     {
-    //         charLenTree += "0";
-    //     }
-    //     else
-    //     {
-    //         charLenTree += "1";
-    //         charLenTree.append(decimalToBitString(charLenCodeLengths[i], 10));
-    //     }
-    // }
-    // for (auto it : pairCharLenCodeLength)
-    // {
-    //     charLenCodeLengthsTree.append(USIZEToBin(it.first));
-    // }
+ for (int i = 0; i < charLenCodeLengths.size(); i++)
+    {
+        if (charLenCodeLengths[i] == 0)
+        {
+            out += "0";
+        }
+        else
+        {
+            out += "1";
+            out.append(decimalToBitString(charLenCodeLengths[i], 12));
+        }
+    }
 
-    // for (int i = 0; i < jumpCodeLengths.size(); i++)
-    // {
-    //     if (jumpCodeLengths[i] == 0)
-    //     {
-    //         jumpTree += "0";
-    //     }
-    //     else
-    //     {
-    //         jumpTree += "1";
-    //         jumpTree.append(decimalToBitString(jumpCodeLengths[i], 10));
-    //     }
-    // }
+    for (auto it : pairCharLenCodeLength)
+    {
+        out.append(USIZEToBin(it.first));
+    }
 
-    // for (auto it : pairJumpCodeLength)
-    // {
-    //     jumpCodeLengthsTree.append(USIZEToBin(it.first));
-    // }
+    for (int i = 0; i < jumpCodeLengths.size(); i++)
+    {
+        if (jumpCodeLengths[i] == 0)
+        {
+            out += "0";
+        }
+        else
+        {
+            out += "1";
+            out.append(decimalToBitString(jumpCodeLengths[i], 12));
+        }
+    }
 
-    // out.append(compareHistoryStrings(charLenTree, historyCharLenTree, histCharLenTreePointer));
-    // out.append(compareHistoryStrings(charLenCodeLengthsTree, historyCharLenCodes, histCharLenCodesPointer));
-    // out.append(compareHistoryStrings(jumpTree, historyJumpTree, histJumpTreePointer));
-    // out.append(compareHistoryStrings(jumpCodeLengthsTree, historyJumpCodes, histJumpCodesPointer));
+    for (auto it : pairJumpCodeLength)
+    {
+        out.append(USIZEToBin(it.first));
+    }
 
     uint16_t aux;
     USIZE diffMatchLen = 0;
@@ -652,6 +642,7 @@ std::string WriteDeflateBitString(
         }
         out.append(mapCharLenCodeLength[it.nextChar].first);
     }
+    // std::cout<<out<<"\n\n";
     return out;
 }
 
@@ -698,7 +689,16 @@ void DeflatePart(std::deque<Data> codeTriplesAux,
         calcU16CodeLengths(pairCharLenCodeLength, charLenCodeLengths);
         buildU16Codes(pairCharLenCodeLength, charLenCodeLengths, mapCharLenCodeLength);
 
+    //     for(auto it: mapCharLenCodeLength){
+    //         std::cout<<it.first << " " <<it.second.first<<"\n";
+    //     }
+    std::cout<<"C";
+    for(auto it: charLenCodeLengths){
+        std::cout<<it<<" ";
     }
+    std::cout<<"\n\n";
+    }
+    // std::cout<<"\n\n";
 
     if (bufferJump.size() > 0)
     {
@@ -725,6 +725,12 @@ void DeflatePart(std::deque<Data> codeTriplesAux,
         mapCodesU16(heapJump.top(), 0, pairJumpCodeLength); /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
         calcU16CodeLengths(pairJumpCodeLength, JumpCodeLengths);
         buildU16Codes(pairJumpCodeLength, JumpCodeLengths, mapJumpCodeLength);
+    std::cout<<"J";
+
+    for(auto it: JumpCodeLengths){
+        std::cout<<it<<" ";
+    }
+    std::cout<<"\n\n";
 
     }
     bitString += WriteDeflateBitString(
@@ -758,7 +764,7 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode)
 
     while (i < codeTriples.size())
     {
-        for (j = i; j - i < 30; j++)
+        for (j = i; j - i < 800; j++)
         {
             if (j == codeTriples.size())
             {
