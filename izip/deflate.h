@@ -9,9 +9,21 @@
 #include "huff.h"
 #include "lz77.h"
 
-#define USIZE uint8_t
+#define USIZE uint16_t
 #define SHIFT sizeof(USIZE) * 4
 #define MASK (1 << SHIFT) - 1
+
+struct DeflateData
+{
+    USIZE offset;
+    USIZE matchLen;
+    USIZE firstInMatchRange;
+    USIZE firstInOffsetRange;
+    USIZE matchExtraBits;
+    USIZE offsetExtraBits;
+    DeflateData(USIZE offset, USIZE matchLen, USIZE firstInMatchRange, USIZE firstInOffsetRange, USIZE matchExtraBits, USIZE offsetExtraBits) : offset(offset), matchLen(matchLen), firstInMatchRange(firstInMatchRange), firstInOffsetRange(firstInOffsetRange), matchExtraBits(matchExtraBits), offsetExtraBits(offsetExtraBits){}
+};
+
 
 std::string offLenToBin(USIZE c);
 void mapCodesUSIZE(

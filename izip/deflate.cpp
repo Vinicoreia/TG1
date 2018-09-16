@@ -215,7 +215,7 @@ std::string compareHistoryStrings(std::string firstString, std::vector<std::stri
     {
         found += "1";
         found.append(decimalToBitString(cont, 2));
-        std::cout << found;
+        // std::cout << found;
         return (found);
     }
     else
@@ -223,9 +223,351 @@ std::string compareHistoryStrings(std::string firstString, std::vector<std::stri
 
         historyString[pointer % 4] = firstString;
         pointer++;
-        std::cout << "0" + firstString;
+        // std::cout << "0" + firstString;
         return "0" + firstString;
     }
+}
+
+DeflateData checkLenAndNLen(USIZE matchSize, USIZE offset)
+{
+
+    USIZE match = 0;
+    USIZE offsetlen = 0;
+    USIZE fInMatchRange = 0;
+    USIZE fInOffsetRange = 0;
+    USIZE matchExtraBits = 0;
+    USIZE offsetExtraBits = 0;
+    if (matchSize >= 3 and matchSize <= 10)
+    {
+        match = 254 + matchSize;
+        fInMatchRange = 3;
+        matchExtraBits = 0;
+    }
+    else if (matchSize >= 11 and matchSize <= 18)
+    {
+        matchExtraBits = 1;
+
+        if (matchSize >= 11 and matchSize <= 12)
+        {
+            match = 265;
+            fInMatchRange = 11;
+        }
+        else if (matchSize >= 13 and matchSize <= 14)
+        {
+            match = 266;
+            fInMatchRange = 13;
+        }
+        else if (matchSize >= 15 and matchSize <= 16)
+        {
+            match = 267;
+            fInMatchRange = 15;
+        }
+        else if (matchSize >= 17 and matchSize <= 18)
+        {
+            match = 268;
+            fInMatchRange = 17;
+        }
+        else
+        {
+            exit(1);
+        }
+    }
+    else if (matchSize >= 19 and matchSize <= 34)
+    {
+        matchExtraBits = 2;
+
+        if (matchSize >= 19 and matchSize <= 22)
+        {
+            match = 269;
+            fInMatchRange = 19;
+        }
+        else if (matchSize >= 23 and matchSize <= 26)
+        {
+            match = 270;
+            fInMatchRange = 23;
+        }
+        else if (matchSize >= 27 and matchSize <= 30)
+        {
+            match = 271;
+            fInMatchRange = 27;
+        }
+        else if (matchSize >= 31 and matchSize <= 34)
+        {
+            match = 272;
+            fInMatchRange = 31;
+        }
+        else
+        {
+            exit(1);
+        }
+    }
+    else if (matchSize >= 35 and matchSize <= 66)
+    {
+        matchExtraBits = 3;
+
+        if (matchSize >= 35 and matchSize <= 42)
+        {
+            match = 273;
+            fInMatchRange = 35;
+        }
+        else if (matchSize >= 43 and matchSize <= 50)
+        {
+            match = 274;
+            fInMatchRange = 43;
+        }
+        else if (matchSize >= 51 and matchSize <= 58)
+        {
+            match = 275;
+            fInMatchRange = 51;
+        }
+        else if (matchSize >= 59 and matchSize <= 66)
+        {
+            match = 276;
+            fInMatchRange = 59;
+        }
+        else
+        {
+            exit(1);
+        }
+    }
+    else if (matchSize >= 67 and matchSize <= 130)
+    {
+        matchExtraBits = 4;
+
+        if (matchSize >= 67 and matchSize <= 82)
+        {
+            match = 277;
+            fInMatchRange = 67;
+        }
+        else if (matchSize >= 83 and matchSize <= 98)
+        {
+            match = 278;
+            fInMatchRange = 83;
+        }
+        else if (matchSize >= 99 and matchSize <= 114)
+        {
+            match = 279;
+            fInMatchRange = 99;
+        }
+        else if (matchSize >= 115 and matchSize <= 130)
+        {
+            match = 280;
+            fInMatchRange = 115;
+        }
+        else
+        {
+            exit(1);
+        }
+    }
+    else if (matchSize >= 131 and matchSize <= 257)
+    {
+        matchExtraBits = 5;
+
+        if (matchSize >= 131 and matchSize <= 162)
+        {
+            match = 281;
+            fInMatchRange = 131;
+        }
+        else if (matchSize >= 163 and matchSize <= 194)
+        {
+            match = 282;
+            fInMatchRange = 163;
+        }
+        else if (matchSize >= 195 and matchSize <= 226)
+        {
+            match = 283;
+            fInMatchRange = 195;
+        }
+        else if (matchSize >= 227 and matchSize <= 257)
+        {
+            match = 284;
+            fInMatchRange = 227;
+        }
+        else
+        {
+            exit(1);
+        }
+    }
+    else if (matchSize == 258)
+    {
+        matchExtraBits = 0;
+        match = 285;
+    }
+    else
+    {
+        exit(1);
+    }
+
+    /*Aqui termina os codeLengths das matchs*/
+
+    if (offset >= 1 and offset <= 4)
+    {
+        offsetlen = offset - 1;
+        fInOffsetRange = 1;
+    }
+    else if (offset >= 5 and offset <= 6)
+    {
+        offsetlen = 4;
+        offsetExtraBits = 1;
+        fInOffsetRange = 5;
+    }
+    else if (offset >= 7 and offset <= 8)
+    {
+        offsetlen = 5;
+        offsetExtraBits = 1;
+        fInOffsetRange = 7;
+    }
+    else if (offset >= 9 and offset <= 12)
+    {
+        offsetlen = 6;
+        offsetExtraBits = 2;
+
+        fInOffsetRange = 9;
+    }
+    else if (offset >= 13 and offset <= 16)
+    {
+        offsetlen = 7;
+        offsetExtraBits = 2;
+        fInOffsetRange = 13;
+    }
+    else if (offset >= 17 and offset <= 24)
+    {
+        offsetlen = 8;
+        offsetExtraBits = 3;
+        fInOffsetRange = 17;
+    }
+    else if (offset >= 25 and offset <= 32)
+    {
+        offsetlen = 9;
+        offsetExtraBits = 3;
+        fInOffsetRange = 25;
+    }
+    else if (offset >= 33 and offset <= 48)
+    {
+        offsetlen = 10;
+        offsetExtraBits = 4;
+        fInOffsetRange = 33;
+    }
+    else if (offset >= 49 and offset <= 64)
+    {
+        offsetlen = 11;
+        offsetExtraBits = 4;
+        fInOffsetRange = 49;
+    }
+    else if (offset >= 65 and offset <= 96)
+    {
+        offsetlen = 12;
+        offsetExtraBits = 5;
+        fInOffsetRange = 65;
+    }
+    else if (offset >= 97 and offset <= 128)
+    {
+        offsetlen = 13;
+        offsetExtraBits = 5;
+        fInOffsetRange = 97;
+    }
+    else if (offset >= 129 and offset <= 192)
+    {
+        offsetlen = 14;
+        offsetExtraBits = 6;
+        fInOffsetRange = 129;
+    }
+    else if (offset >= 193 and offset <= 256)
+    {
+        offsetlen = 15;
+        offsetExtraBits = 6;
+        fInOffsetRange = 193;
+    }
+    else if (offset >= 257 and offset <= 384)
+    {
+        offsetlen = 16;
+        offsetExtraBits = 7;
+        fInOffsetRange = 257;
+    }
+    else if (offset >= 385 and offset <= 512)
+    {
+        offsetlen = 17;
+        offsetExtraBits = 7;
+        fInOffsetRange = 385;
+    }
+    else if (offset >= 513 and offset <= 768)
+    {
+        offsetlen = 18;
+        offsetExtraBits = 8;
+        fInOffsetRange = 513;
+    }
+    else if (offset >= 769 and offset <= 1024)
+    {
+        offsetlen = 19;
+        offsetExtraBits = 8;
+        fInOffsetRange = 769;
+    }
+    else if (offset >= 1025 and offset <= 1536)
+    {
+        offsetlen = 20;
+        offsetExtraBits = 9;
+        fInOffsetRange = 1025;
+    }
+    else if (offset >= 1537 and offset <= 2048)
+    {
+        offsetlen = 21;
+        offsetExtraBits = 9;
+        fInOffsetRange = 1537;
+    }
+    else if (offset >= 2049 and offset <= 3072)
+    {
+        offsetlen = 22;
+        offsetExtraBits = 10;
+        fInOffsetRange = 2049;
+    }
+    else if (offset >= 3073 and offset <= 4096)
+    {
+        offsetlen = 23;
+        offsetExtraBits = 10;
+        fInOffsetRange = 3073;
+    }
+    else if (offset >= 4097 and offset <= 6144)
+    {
+        offsetlen = 24;
+        offsetExtraBits = 11;
+        fInOffsetRange = 4097;
+    }
+    else if (offset >= 6145 and offset <= 8192)
+    {
+        offsetlen = 25;
+        offsetExtraBits = 11;
+        fInOffsetRange = 6145;
+    }
+    else if (offset >= 8193 and offset <= 12288)
+    {
+        offsetlen = 26;
+        offsetExtraBits = 12;
+        fInOffsetRange = 8193;
+    }
+    else if (offset >= 12289 and offset <= 16384)
+    {
+        offsetlen = 27;
+        offsetExtraBits = 12;
+        fInOffsetRange = 12289;
+    }
+    else if (offset >= 16385 and offset <= 24576)
+    {
+        offsetlen = 28;
+        offsetExtraBits = 13;
+        fInOffsetRange = 16385;
+    }
+    else if (offset >= 24577 and offset <= 32768)
+    {
+        offsetlen = 29;
+        offsetExtraBits = 13;
+        fInOffsetRange = 24577;
+    }
+    else
+    {
+        exit(1);
+    }
+
+    return DeflateData(offsetlen, match, fInMatchRange, fInOffsetRange, matchExtraBits, offsetExtraBits);
 }
 
 std::string WriteDeflateBitString(
@@ -247,70 +589,68 @@ std::string WriteDeflateBitString(
 
     std::string out = "";
 
-    for (int i = 0; i < charLenCodeLengths.size(); i++)
-    {
-        if (charLenCodeLengths[i] == 0)
-        {
-            charLenTree += "0";
-        }
-        else
-        {
-            charLenTree += "1";
-            charLenTree.append(decimalToBitString(charLenCodeLengths[i], 10));
-        }
-    }
-    for (auto it : pairCharLenCodeLength)
-    {
-        charLenCodeLengthsTree.append(USIZEToBin(it.first));
-    }
+    // for (int i = 0; i < charLenCodeLengths.size(); i++)
+    // {
+    //     if (charLenCodeLengths[i] == 0)
+    //     {
+    //         charLenTree += "0";
+    //     }
+    //     else
+    //     {
+    //         charLenTree += "1";
+    //         charLenTree.append(decimalToBitString(charLenCodeLengths[i], 10));
+    //     }
+    // }
+    // for (auto it : pairCharLenCodeLength)
+    // {
+    //     charLenCodeLengthsTree.append(USIZEToBin(it.first));
+    // }
 
-    for (int i = 0; i < jumpCodeLengths.size(); i++)
-    {
-        if (jumpCodeLengths[i] == 0)
-        {
-            jumpTree += "0";
-        }
-        else
-        {
-            jumpTree += "1";
-            jumpTree.append(decimalToBitString(jumpCodeLengths[i], 10));
-        }
-    }
+    // for (int i = 0; i < jumpCodeLengths.size(); i++)
+    // {
+    //     if (jumpCodeLengths[i] == 0)
+    //     {
+    //         jumpTree += "0";
+    //     }
+    //     else
+    //     {
+    //         jumpTree += "1";
+    //         jumpTree.append(decimalToBitString(jumpCodeLengths[i], 10));
+    //     }
+    // }
 
-    for (auto it : pairJumpCodeLength)
-    {
-        jumpCodeLengthsTree.append(USIZEToBin(it.first));
-    }
+    // for (auto it : pairJumpCodeLength)
+    // {
+    //     jumpCodeLengthsTree.append(USIZEToBin(it.first));
+    // }
 
-    std::cout << "\n\n";
-    out.append(compareHistoryStrings(charLenTree, historyCharLenTree, histCharLenTreePointer));
-    std::cout << " ";
-    out.append(compareHistoryStrings(charLenCodeLengthsTree, historyCharLenCodes, histCharLenCodesPointer));
-    std::cout << "\n";
-    out.append(compareHistoryStrings(jumpTree, historyJumpTree, histJumpTreePointer));
-    std::cout << " ";
-    out.append(compareHistoryStrings(jumpCodeLengthsTree, historyJumpCodes, histJumpCodesPointer));
-    std::cout << "\n";
+    // out.append(compareHistoryStrings(charLenTree, historyCharLenTree, histCharLenTreePointer));
+    // out.append(compareHistoryStrings(charLenCodeLengthsTree, historyCharLenCodes, histCharLenCodesPointer));
+    // out.append(compareHistoryStrings(jumpTree, historyJumpTree, histJumpTreePointer));
+    // out.append(compareHistoryStrings(jumpCodeLengthsTree, historyJumpCodes, histJumpCodesPointer));
 
     uint16_t aux;
-
+    USIZE diffMatchLen = 0;
+    USIZE diffOffset = 0;
+    DeflateData lenNLen(0, 0, 0, 0, 0, 0);
     for (auto it : codeTriples)
     {
-        aux = it.nextChar;
-        aux = aux << 8;
 
-        out.append(mapJumpCodeLength[it.offset].first);
-        if (it.match.length() == 0)
+        if (it.match.size() != 0)
         {
-            aux |= it.match.length();
-            out.append(mapCharLenCodeLength[aux].first);
+            lenNLen = checkLenAndNLen(it.match.length(), it.offset);
+            out.append(mapCharLenCodeLength[lenNLen.matchLen].first);
+            if (lenNLen.matchExtraBits > 0)
+            {
+                out.append(decimalToBitString(it.match.length() - lenNLen.firstInMatchRange, lenNLen.matchExtraBits));
+            }
+            out.append(mapJumpCodeLength[lenNLen.offset].first);
+            if (lenNLen.offsetExtraBits > 0)
+            {
+                out.append(decimalToBitString(it.offset - lenNLen.firstInOffsetRange, lenNLen.offsetExtraBits));
+            }
         }
-        else
-        {
-            aux |= (it.match.length() - 3);
-
-            out.append(mapCharLenCodeLength[aux].first);
-        }
+        out.append(mapCharLenCodeLength[it.nextChar].first);
     }
     return out;
 }
@@ -333,52 +673,60 @@ void DeflatePart(std::deque<Data> codeTriplesAux,
     std::unordered_map<uint16_t, std::pair<std::string, int>> mapCharLenCodeLength;
     std::unordered_map<uint16_t, std::pair<std::string, int>> mapJumpCodeLength;
 
-    pairCharLenProb = getFrequencyU16(bufferCharLen);
-    pairJumpProb = getFrequencyU16(bufferJump);
-
-    struct nodeU16 *nLeftC16, *nRightC16, *nTopC16;
-    for (int i = 0; i < pairCharLenProb.size(); i++)
+    if (bufferCharLen.size() > 0)
     {
-        heapCharLen.push(new nodeU16(pairCharLenProb[i].first, pairCharLenProb[i].second, true));
+        pairCharLenProb = getFrequencyU16(bufferCharLen);
+        struct nodeU16 *nLeftC16, *nRightC16, *nTopC16;
+        for (int i = 0; i < pairCharLenProb.size(); i++)
+        {
+            heapCharLen.push(new nodeU16(pairCharLenProb[i].first, pairCharLenProb[i].second, true));
+        }
+
+        while (heapCharLen.size() != 1)
+        {
+            nLeftC16 = heapCharLen.top();
+            heapCharLen.pop();
+            nRightC16 = heapCharLen.top();
+            heapCharLen.pop();
+            nTopC16 = new nodeU16((uint16_t)0x1f, nLeftC16->key_value + nRightC16->key_value, false);
+            nTopC16->left = nLeftC16;
+            nTopC16->right = nRightC16;
+            heapCharLen.push(nTopC16);
+        }
+
+        mapCodesU16(heapCharLen.top(), 0, pairCharLenCodeLength); /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
+        calcU16CodeLengths(pairCharLenCodeLength, charLenCodeLengths);
+        buildU16Codes(pairCharLenCodeLength, charLenCodeLengths, mapCharLenCodeLength);
+
     }
 
-    struct nodeU16 *nLeftOL, *nRightOL, *nTopOL;
-    for (int i = 0; i < pairJumpProb.size(); i++)
+    if (bufferJump.size() > 0)
     {
-        heapJump.push(new nodeU16(pairJumpProb[i].first, pairJumpProb[i].second, true));
+        pairJumpProb = getFrequencyU16(bufferJump);
+
+        struct nodeU16 *nLeftOL, *nRightOL, *nTopOL;
+        for (int i = 0; i < pairJumpProb.size(); i++)
+        {
+            heapJump.push(new nodeU16(pairJumpProb[i].first, pairJumpProb[i].second, true));
+        }
+
+        while (heapJump.size() != 1)
+        {
+            nLeftOL = heapJump.top();
+            heapJump.pop();
+            nRightOL = heapJump.top();
+            heapJump.pop();
+            nTopOL = new nodeU16((uint16_t)0x1f, nLeftOL->key_value + nRightOL->key_value, false);
+            nTopOL->left = nLeftOL;
+            nTopOL->right = nRightOL;
+            heapJump.push(nTopOL);
+        }
+
+        mapCodesU16(heapJump.top(), 0, pairJumpCodeLength); /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
+        calcU16CodeLengths(pairJumpCodeLength, JumpCodeLengths);
+        buildU16Codes(pairJumpCodeLength, JumpCodeLengths, mapJumpCodeLength);
+
     }
-
-    while (heapCharLen.size() != 1)
-    {
-        nLeftC16 = heapCharLen.top();
-        heapCharLen.pop();
-        nRightC16 = heapCharLen.top();
-        heapCharLen.pop();
-        nTopC16 = new nodeU16((uint16_t)0x1f, nLeftC16->key_value + nRightC16->key_value, false);
-        nTopC16->left = nLeftC16;
-        nTopC16->right = nRightC16;
-        heapCharLen.push(nTopC16);
-    }
-
-    while (heapJump.size() != 1)
-    {
-        nLeftOL = heapJump.top();
-        heapJump.pop();
-        nRightOL = heapJump.top();
-        heapJump.pop();
-        nTopOL = new nodeU16((uint16_t)0x1f, nLeftOL->key_value + nRightOL->key_value, false);
-        nTopOL->left = nLeftOL;
-        nTopOL->right = nRightOL;
-        heapJump.push(nTopOL);
-    }
-
-    mapCodesU16(heapCharLen.top(), 0, pairCharLenCodeLength); /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
-    mapCodesU16(heapJump.top(), 0, pairJumpCodeLength);       /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
-    calcU16CodeLengths(pairCharLenCodeLength, charLenCodeLengths);
-    calcU16CodeLengths(pairJumpCodeLength, JumpCodeLengths);
-    buildU16Codes(pairJumpCodeLength, JumpCodeLengths, mapJumpCodeLength);
-    buildU16Codes(pairCharLenCodeLength, charLenCodeLengths, mapCharLenCodeLength);
-
     bitString += WriteDeflateBitString(
         codeTriplesAux,
 
@@ -404,277 +752,33 @@ void DeflateEncode(std::string filenameIn, std::string filenameOut, int encode)
     std::vector<uint16_t> bufferJump;
     std::vector<uint16_t> bufferCharLen;
     uint16_t aux = 0;
+    DeflateData lenNLen(0, 0, 0, 0, 0, 0);
     int i = 0;
     int j = 0;
 
     while (i < codeTriples.size())
     {
-        for (j = i; j - i < 4; j++)
+        for (j = i; j - i < 30; j++)
         {
             if (j == codeTriples.size())
             {
                 break;
             }
-            if (codeTriples[j].match.length() == 0)
+            if (codeTriples[j].match.length() != 0)
             {
-                bufferCharLen.push_back(codeTriples[j].nextChar);
+                lenNLen = checkLenAndNLen(codeTriples[j].match.length(), codeTriples[j].offset);
+                bufferCharLen.push_back(lenNLen.matchLen);
+                bufferJump.push_back(lenNLen.offset);
             }
-            else
-            { /* Aqui separamos os Lengths para extra bits*/
-                bufferCharLen.push_back(codeTriples[j].nextChar);
-                if (codeTriples[j].match.length() >= 3 and codeTriples[j].match.length() <= 10)
-                {
-                    bufferCharLen.push_back(254 + codeTriples[j].match.length());
-                }
-                else if (codeTriples[j].match.length() >= 11 and codeTriples[j].match.length() <= 18)
-                {
 
-                    if (codeTriples[j].match.length() >= 11 and codeTriples[j].match.length() <= 12)
-                    {
-                        bufferCharLen.push_back(265);
-                    }
-                    else if (codeTriples[j].match.length() >= 13 and codeTriples[j].match.length() <= 14)
-                    {
-                        bufferCharLen.push_back(266);
-                    }
-                    else if (codeTriples[j].match.length() >= 15 and codeTriples[j].match.length() <= 16)
-                    {
-                        bufferCharLen.push_back(267);
-                    }
-                    else if (codeTriples[j].match.length() >= 17 and codeTriples[j].match.length() <= 18)
-                    {
-                        bufferCharLen.push_back(268);
-                    }
-                    else
-                    {
-                        exit(1);
-                    }
-                }
-                else if (codeTriples[j].match.length() >= 19 and codeTriples[j].match.length() <= 34)
-                {
+            bufferCharLen.push_back(codeTriples[j].nextChar);
 
-                    if (codeTriples[j].match.length() >= 19 and codeTriples[j].match.length() <= 22)
-                    {
-                        bufferCharLen.push_back(269);
-                    }
-                    else if (codeTriples[j].match.length() >= 23 and codeTriples[j].match.length() <= 26)
-                    {
-                        bufferCharLen.push_back(270);
-                    }
-                    else if (codeTriples[j].match.length() >= 27 and codeTriples[j].match.length() <= 30)
-                    {
-                        bufferCharLen.push_back(271);
-                    }
-                    else if (codeTriples[j].match.length() >= 31 and codeTriples[j].match.length() <= 34)
-                    {
-                        bufferCharLen.push_back(272);
-                    }
-                    else
-                    {
-                        exit(1);
-                    }
-                }
-                else if (codeTriples[j].match.length() >= 35 and codeTriples[j].match.length() <= 66)
-                {
-
-                    if (codeTriples[j].match.length() >= 35 and codeTriples[j].match.length() <= 42)
-                    {
-                        bufferCharLen.push_back(273);
-                    }
-                    else if (codeTriples[j].match.length() >= 43 and codeTriples[j].match.length() <= 50)
-                    {
-                        bufferCharLen.push_back(274);
-                    }
-                    else if (codeTriples[j].match.length() >= 51 and codeTriples[j].match.length() <= 58)
-                    {
-                        bufferCharLen.push_back(275);
-                    }
-                    else if (codeTriples[j].match.length() >= 59 and codeTriples[j].match.length() <= 66)
-                    {
-                        bufferCharLen.push_back(276);
-                    }
-                    else
-                    {
-                        exit(1);
-                    }
-                }
-                else if (codeTriples[j].match.length() >= 67 and codeTriples[j].match.length() <= 130)
-                {
-
-                    if (codeTriples[j].match.length() >= 67 and codeTriples[j].match.length() <= 82)
-                    {
-                        bufferCharLen.push_back(277);
-                    }
-                    else if (codeTriples[j].match.length() >= 83 and codeTriples[j].match.length() <= 98)
-                    {
-                        bufferCharLen.push_back(278);
-                    }
-                    else if (codeTriples[j].match.length() >= 99 and codeTriples[j].match.length() <= 114)
-                    {
-                        bufferCharLen.push_back(279);
-                    }
-                    else if (codeTriples[j].match.length() >= 115 and codeTriples[j].match.length() <= 130)
-                    {
-                        bufferCharLen.push_back(280);
-                    }
-                    else
-                    {
-                        exit(1);
-                    }
-                }
-                else if (codeTriples[j].match.length() >= 131 and codeTriples[j].match.length() <= 257)
-                {
-
-                    if (codeTriples[j].match.length() >= 131 and codeTriples[j].match.length() <= 162)
-                    {
-                        bufferCharLen.push_back(281);
-                    }
-                    else if (codeTriples[j].match.length() >= 163 and codeTriples[j].match.length() <= 194)
-                    {
-                        bufferCharLen.push_back(282);
-                    }
-                    else if (codeTriples[j].match.length() >= 195 and codeTriples[j].match.length() <= 226)
-                    {
-                        bufferCharLen.push_back(283);
-                    }
-                    else if (codeTriples[j].match.length() >= 227 and codeTriples[j].match.length() <= 257)
-                    {
-                        bufferCharLen.push_back(284);
-                    }
-                    else
-                    {
-                        exit(1);
-                    }
-                }
-                else if (codeTriples[j].match.length() == 258)
-                {
-                    bufferCharLen.push_back(285);
-                }
-                else
-                {
-                    exit(1);
-                }
-
-                /*Aqui termina os codeLengths das matchs*/
-
-                if (codeTriples[j].offset >= 1 and codeTriples[j].offset <= 4)
-                {
-                    bufferJump.push_back(codeTriples[j].offset - 1);
-                }
-                else if (codeTriples[j].offset >= 5 and codeTriples[j].offset <= 6)
-                {
-                    bufferJump.push_back(4);
-                }
-                else if (codeTriples[j].offset >= 7 and codeTriples[j].offset <= 8)
-                {
-                    bufferJump.push_back(5);
-                }
-                else if (codeTriples[j].offset >= 9 and codeTriples[j].offset <= 12)
-                {
-                    bufferJump.push_back(6);
-                }
-                else if (codeTriples[j].offset >= 13 and codeTriples[j].offset <= 16)
-                {
-                    bufferJump.push_back(7);
-                }
-                else if (codeTriples[j].offset >= 17 and codeTriples[j].offset <= 24)
-                {
-                    bufferJump.push_back(8);
-                }
-                else if (codeTriples[j].offset >= 25 and codeTriples[j].offset <= 32)
-                {
-                    bufferJump.push_back(9);
-                }
-                else if (codeTriples[j].offset >= 33 and codeTriples[j].offset <= 48)
-                {
-                    bufferJump.push_back(10);
-                }
-                else if (codeTriples[j].offset >= 49 and codeTriples[j].offset <= 64)
-                {
-                    bufferJump.push_back(11);
-                }
-                else if (codeTriples[j].offset >= 65 and codeTriples[j].offset <= 96)
-                {
-                    bufferJump.push_back(12);
-                }
-                else if (codeTriples[j].offset >= 97 and codeTriples[j].offset <= 128)
-                {
-                    bufferJump.push_back(13);
-                }
-                else if (codeTriples[j].offset >= 129 and codeTriples[j].offset <= 192)
-                {
-                    bufferJump.push_back(14);
-                }
-                else if (codeTriples[j].offset >= 193 and codeTriples[j].offset <= 256)
-                {
-                    bufferJump.push_back(15);
-                }
-                else if (codeTriples[j].offset >= 257 and codeTriples[j].offset <= 384)
-                {
-                    bufferJump.push_back(16);
-                }
-                else if (codeTriples[j].offset >= 385 and codeTriples[j].offset <= 512)
-                {
-                    bufferJump.push_back(17);
-                }
-                else if (codeTriples[j].offset >= 513 and codeTriples[j].offset <= 768)
-                {
-                    bufferJump.push_back(18);
-                }
-                else if (codeTriples[j].offset >= 769 and codeTriples[j].offset <= 1024)
-                {
-                    bufferJump.push_back(19);
-                }
-                else if (codeTriples[j].offset >= 1025 and codeTriples[j].offset <= 1536)
-                {
-                    bufferJump.push_back(20);
-                }
-                else if (codeTriples[j].offset >= 1537 and codeTriples[j].offset <= 2048)
-                {
-                    bufferJump.push_back(21);
-                }
-                else if (codeTriples[j].offset >= 2049 and codeTriples[j].offset <= 3072)
-                {
-                    bufferJump.push_back(22);
-                }
-                else if (codeTriples[j].offset >= 3073 and codeTriples[j].offset <= 4096)
-                {
-                    bufferJump.push_back(23);
-                }
-                else if (codeTriples[j].offset >= 4097 and codeTriples[j].offset <= 6144)
-                {
-                    bufferJump.push_back(24);
-                }
-                else if (codeTriples[j].offset >= 6145 and codeTriples[j].offset <= 8192)
-                {
-                    bufferJump.push_back(25);
-                }
-                else if (codeTriples[j].offset >= 8193 and codeTriples[j].offset <= 12288)
-                {
-                    bufferJump.push_back(26);
-                }
-                else if (codeTriples[j].offset >= 12289 and codeTriples[j].offset <= 16384)
-                {
-                    bufferJump.push_back(27);
-                }
-                else if (codeTriples[j].offset >= 16385 and codeTriples[j].offset <= 24576)
-                {
-                    bufferJump.push_back(28);
-                }
-                else if (codeTriples[j].offset >= 24577 and codeTriples[j].offset <= 32768)
-                {
-                    bufferJump.push_back(29);
-                }
-                else
-                {
-                    exit(1);
-                }
-            }
             codeTriplesAux.emplace_back(codeTriples[j]);
         }
         i = j;
 
         DeflatePart(codeTriplesAux, bufferJump, bufferCharLen);
+        lenNLen = {0, 0, 0, 0, 0, 0};
         codeTriplesAux.clear();
         bufferJump.clear();
         bufferCharLen.clear();
