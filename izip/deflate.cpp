@@ -17,7 +17,7 @@ int histCharLenCodesPointer = 0;
 int histJumpTreePointer = 0;
 int histJumpCodesPointer = 0;
 
-#define MAXCODESIZE 18
+#define MAXCODESIZE 180
 std::string USIZEToBin(USIZE c)
 {
     std::string charBin;
@@ -658,9 +658,9 @@ void DeflatePart(std::deque<Data> codeTriplesAux,
     std::priority_queue<nodeU16 *, std::vector<nodeU16 *>, compareU16> heapCharLen;
     std::priority_queue<nodeU16 *, std::vector<nodeU16 *>, compareU16> heapJump;
     std::vector<std::pair<uint16_t, int>> pairCharLenCodeLength;
-    std::vector<int> charLenCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    std::vector<int> charLenCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     std::vector<std::pair<uint16_t, int>> pairJumpCodeLength;
-    std::vector<int> JumpCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    std::vector<int> JumpCodeLengths = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     std::unordered_map<uint16_t, std::pair<std::string, int>> mapCharLenCodeLength;
     std::unordered_map<uint16_t, std::pair<std::string, int>> mapJumpCodeLength;
 
@@ -692,11 +692,11 @@ void DeflatePart(std::deque<Data> codeTriplesAux,
     //     for(auto it: mapCharLenCodeLength){
     //         std::cout<<it.first << " " <<it.second.first<<"\n";
     //     }
-    std::cout<<"C";
-    for(auto it: charLenCodeLengths){
-        std::cout<<it<<" ";
-    }
-    std::cout<<"\n\n";
+    // std::cout<<"C";
+    // for(auto it: charLenCodeLengths){
+    //     std::cout<<it<<" ";
+    // }
+    // std::cout<<"\n\n";
     }
     // std::cout<<"\n\n";
 
@@ -725,12 +725,12 @@ void DeflatePart(std::deque<Data> codeTriplesAux,
         mapCodesU16(heapJump.top(), 0, pairJumpCodeLength); /*Mapeia a arvore de huffman pra calcular o tamanho dos códigos*/
         calcU16CodeLengths(pairJumpCodeLength, JumpCodeLengths);
         buildU16Codes(pairJumpCodeLength, JumpCodeLengths, mapJumpCodeLength);
-    std::cout<<"J";
+    // std::cout<<"J";
 
-    for(auto it: JumpCodeLengths){
-        std::cout<<it<<" ";
-    }
-    std::cout<<"\n\n";
+    // for(auto it: JumpCodeLengths){
+    //     std::cout<<it<<" ";
+    // }
+    // std::cout<<"\n\n";
 
     }
     bitString += WriteDeflateBitString(
