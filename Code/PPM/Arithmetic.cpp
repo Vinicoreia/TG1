@@ -50,11 +50,9 @@ void Arithmetic::StaticEncode(fstream* output, std::vector<uint8_t>* input) {
 
 
 	for (size_t i = 0; i <= input->size(); i++) {
-		//cout << "\rProcessing " << i << " of " << input->size();
 		if (i < input->size())
 			readAux = input->at(i);
-		//readAux = read;
-		/*if (i == input->size())*/else {
+		else {
 			readAux = (int)alphabetSize;
 		}
 
@@ -176,8 +174,7 @@ void Arithmetic::AdaptiveEncode(fstream * output, vector<uint8_t>* input)
 		//cout << "\rProcessing " << i << " of " << input->size();
 		if (i < input->size())
 			readAux = input->at(i);
-		//readAux = read;
-		/*if (i == input->size())*/else {
+		else {
 			readAux = (int)alphabetSize;
 		}
 
@@ -311,14 +308,11 @@ void Arithmetic::PPMEncode(fstream * output, fstream* input)
 
 	//for (size_t i = 0; i <= input->size(); i++) {
 	while(!input->eof()){
-		//cout << "\rProcessing " << i << " of " << input->size();
-		//if (i < input->size())
+
 		input->read((char*)&read, sizeof(uint8_t));
 
 		readAux = (unsigned int)read;
-			//readAux = input->at(i);
-		//readAux = read;
-		/*if (i == input->size())*/if(input->eof()) {
+		if(input->eof()) {
 			readAux = (int)alphabetSize;
 		}
 
@@ -369,10 +363,6 @@ void Arithmetic::PPMEncode(fstream * output, fstream* input)
 			else {
 				//In contex, so write symbol, add to the frequency and update the context
 				WriteSymbol(readAux, (previousTable.empty() || currentTable == &orderM1) ? *currentTable : currentTable->Exclusion(previousTable.top()));
-
-				/*if (currentOrder != 0) {
-					currentTable->AddFrequency(readAux);
-				}*/
 
 				uint64_t auxMask = currentContextMask;
 				for (int k = currentOrder; k >= 0; k--) {
@@ -576,11 +566,6 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 
 void Arithmetic::WriteSymbol(int readAux, CumulativeCountTable freq)
 {
-	//Update the range of high and low
-	if (freq.GetFrequency(readAux) == 0) {
-		cout << "WTF!\n";
-	}
-
 	unsigned long long range = high - low + 1;
 	unsigned long long nLow = low + (range * freq.GetLow(readAux)) / freq.count;
 	high = (low + (range * freq.GetHigh(readAux)) / freq.count) - 1;

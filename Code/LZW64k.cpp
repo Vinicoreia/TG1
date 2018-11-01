@@ -101,7 +101,6 @@ int main(int argc, char** argv) {
 }
 
 void LZ78::Encode(string filename, string outputfile) {
-	//unordered_map<long long, pair<long long, uint8_t>> dictionary;
 	unordered_map<long long, Tree*> dictionary;
 
 	uint8_t read;
@@ -109,8 +108,6 @@ void LZ78::Encode(string filename, string outputfile) {
 
 	Tree base(NULL, aux, 0);
 	Tree* currentPos = &base;
-
-	//dictionary[0] = &base;
 
 	for (int i = 0; i < 256; i++) {
 		aux.clear();

@@ -75,8 +75,6 @@ public:
 };
 
 int main(int argc, char** argv) {
-	//TODO 
-	//MENU
 	string filename;
 	string outputfile;
 	cout << "File to be encoded: ";
@@ -103,7 +101,6 @@ int main(int argc, char** argv) {
 }
 
 void LZ78::Encode(string filename, string outputfile) {
-	//unordered_map<long long, pair<long long, uint8_t>> dictionary;
 	/*
 	The dictionary consists of an index and a pointer to a node in the tree.
 	*/
@@ -137,10 +134,6 @@ void LZ78::Encode(string filename, string outputfile) {
 
 	std::cout << "Writing ";
 	do {
-		//std::cout << laod[load++] << "\b";
-		//load %= 4;
-
-		//cout << dictionary.size()<<endl;
 
 		fread(&read, sizeof(uint8_t), 1, inFileP);
 
@@ -363,8 +356,7 @@ void LZ78::Decode(string filename, string outputfile) {
 								counter = 1;
 							}
 						}
-						//cout << counter << " ";
-						//Remove child and set ew index
+						//Remove child and set new index
 						Tree* parent = dictionary[counter]->parent;
 						parent->RemoveChild(dictionary[counter]->bytes.back());
 

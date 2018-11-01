@@ -30,12 +30,6 @@ int SliceEq(Slices a, Slices b) {
 }
 
 int SortCompare(const vector<uint8_t> &a, const vector<uint8_t> &b) {
-	/*for (int i = 0; i < a.size(); i++) {
-	if (a[i] != b[i]) {
-	return a[i] < b[i];
-	}
-	}*/
-
 	return a < b;
 }
 
@@ -80,11 +74,9 @@ unsigned short Find(vector<vector<uint8_t>> *vec, vector<uint8_t> *find) {
 		if (*find < vec->at(mid)) {
 			b = mid;
 		}
-		else /*if(find > vec[mid])*/ {
+		else {
 			a = mid;
-		}/*
-		 else
-		 return mid;*/
+		}
 	}
 	return (unsigned short)a;
 }
@@ -173,13 +165,9 @@ long long BWT::Transform(Data* toTransform) {
 		}
 	}
 
-	//memcpy(previous.data(), toTransform->data, toTransform->size);
 	for (size_t i = 0; i <toTransform->size; i++) {
 		previous[i] = pos[toTransform->data[i]];
 	}
-
-
-
 
 	for (int i = 1; i>>1 < toTransform->size; i<<=1) {
 		for (int j = 0; j < toTransform->size; j++) {
@@ -202,31 +190,7 @@ long long BWT::Transform(Data* toTransform) {
 		}
 	}
 
-	//vector<vector<uint8_t>> rotations(toTransform->size, vector<uint8_t>(toTransform->size));
-	//vector<long long> rotations;
-	
-	//for (long long i = 0; i < toTransform->size; i++) {
-	//	rotations.emplace_back(i);
-	//}
-
-	/*for (int i = 0; i < toTransform->size; i++) {
-		/*for (int j = 0, k = i; j < toTransform->size; j++, k++) {
-		rotations[i][j] = toTransform->data[k%toTransform->size];
-		}///
-		memcpy(rotations[i].data(), original.data() + i, original.size() - i);
-		memcpy((rotations[i].data() + toTransform->size - i), toTransform->data, i);
-	}*/
-
-	//sort(rotations.begin(), rotations.end(), SortCompare1);
-
 	long long index;
-
-	/*for (long long i = 0; i < previous.size(); i++) {
-		if (previous[i] == 0) {
-			index = i;
-			break;
-		}
-	}*/
 
 	for (long long i = 0; i < previous.size(); i++) {
 		toTransform->data[previous[i]] = original[(i - 1 + previous.size())%previous.size()];
@@ -234,55 +198,3 @@ long long BWT::Transform(Data* toTransform) {
 
 	return previous[0];
 }
-
-/*
-int main() {
-	fstream file;
-	string filename;
-	vector<uint8_t> read;
-	getline(cin, filename);
-
-	file.open(filename, fstream::in | fstream::binary);
-
-	for(;;) {
-		uint8_t byte;
-		file.read((char*)&byte, 1);
-		if (file.eof()) {
-			break;
-		}
-		read.emplace_back(byte);
-	}
-
-	file.close();
-
-	Data data(read.size());
-	//uint8_t* toTransform = new uint8_t[read.size()];
-
-	for (int i = 0; i < read.size(); i++) {
-		data.data[i] = read[i];
-	}
-
-
-	//pair<Data, int> index;
-	unsigned short index = BWT::Transform(&data);
-	
-	getline(cin, filename);
-
-	file.open(filename, fstream::out | fstream::binary);
-
-	file.write((char*)(data.data), data.size);
-
-	file.close();
-
-	BWT::Reverse(&data, index);
-
-	cin >> filename;
-	file.open(filename, fstream::out | fstream::binary);
-
-	file.write((char*)data.data, data.size);
-
-	file.close();
-	system("PAUSE");
-	return 0;
-}
-*/

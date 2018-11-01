@@ -153,18 +153,3 @@ void MTF::Decode(Data* in) {
 		in->data[i] = data[i];
 	}
 }
-
-/*
-int main (){
-    std::string file1, file2;
-    std::cin>>file1>>file2;
-
-    MTF::Encode(file1, file2);
-
-    std::cin>>file1>>file2;
-
-    MTF::Decode(file1, file2);
-
-    return 0;
-}
-*/
