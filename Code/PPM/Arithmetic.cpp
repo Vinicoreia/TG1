@@ -10,6 +10,8 @@
 #define TOP_MASK 0x80000000U
 
 #define MAXMEM 750000
+#define MAXORDER 5
+
 //3500 = 15MB
 //250000 = 550MB 
 Arithmetic::Arithmetic(uint64 precision, uint64 msb, uint64 alphabetSize):precision(precision), msbMask(msb), alphabetSize(alphabetSize)
@@ -278,7 +280,7 @@ void Arithmetic::PPMEncode(fstream * output, fstream* input)
 	long long memory = 0;
 
 	int currentOrder = 0;
-	int nofOrders = 5;
+	int nofOrders = MAXORDER;
 	int highestOrder = 0;
 
 	vector<unordered_map<uint64_t, CumulativeCountTable*>> orders(nofOrders);
@@ -411,7 +413,7 @@ void Arithmetic::PPMDecode(fstream * input, vector<uint8_t>* output)
 	order0.AddFrequency((size_t)alphabetSize + 1);
 
 	int currentOrder = 0;
-	int nofOrders = 5;
+	int nofOrders = MAXORDER;
 	int highestOrder = 0;
 
 	vector<unordered_map<uint64_t, CumulativeCountTable*>> orders(nofOrders);
